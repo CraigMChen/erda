@@ -52,7 +52,7 @@ func NewController(cfg *rest.Config, opts *generic.FactoryOptions) (*Controllers
 	if err != nil {
 		return nil, err
 	}
-	//c.starters = append(c.starters, core)
+	c.starters = append(c.starters, core)
 
 	rbac, err := rbac.NewFactoryFromConfigWithOptions(cfg, opts)
 	if err != nil {
@@ -64,7 +64,7 @@ func NewController(cfg *rest.Config, opts *generic.FactoryOptions) (*Controllers
 	if err != nil {
 		return nil, err
 	}
-	//c.starters = append(c.starters, api)
+	c.starters = append(c.starters, api)
 
 	crd, err := apiextensions.NewFactoryFromConfigWithOptions(cfg, opts)
 	if err != nil {
