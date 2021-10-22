@@ -29,7 +29,14 @@ type Response struct {
 
 func (rw *Response) Write(apiOp *types.APIRequest, code int, obj types.APIObject) {
 	rw.StatusCode = code
-	rw.ResponseData = convert(apiOp, obj)
+	if obj.Data().String("type") == "error" {
+		rw.ResponseData = &types.RawResource{
+			Type:      "error",
+			APIObject: obj,
+		}
+	} else {
+		rw.ResponseData = convert(apiOp, obj)
+	}
 }
 
 func (rw *Response) WriteList(apiOp *types.APIRequest, code int, obj types.APIObjectList) {
