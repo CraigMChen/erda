@@ -110,6 +110,7 @@ func toAPI(schema *types.APISchema, obj runtime.Object) types.APIObject {
 }
 
 func (s *Store) byID(apiOp *types.APIRequest, schema *types.APISchema, id string) (*unstructured.Unstructured, error) {
+	attributes.SetTable(schema, true)
 	k8sClient, err := s.clientGetter.TableClient(apiOp, schema, apiOp.Namespace)
 	if err != nil {
 		return nil, err
@@ -227,6 +228,7 @@ func (s *Store) ByNames(apiOp *types.APIRequest, schema *types.APISchema, names 
 }
 
 func (s *Store) List(apiOp *types.APIRequest, schema *types.APISchema) (types.APIObjectList, error) {
+	attributes.SetTable(schema, true)
 	client, err := s.clientGetter.TableClient(apiOp, schema, apiOp.Namespace)
 	if err != nil {
 		return types.APIObjectList{}, err
