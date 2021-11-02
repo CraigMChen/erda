@@ -33,7 +33,6 @@ import (
 	"github.com/rancher/steve/pkg/resources/common"
 	"github.com/rancher/steve/pkg/resources/schemas"
 	"github.com/rancher/steve/pkg/schema"
-	steveserver "github.com/rancher/steve/pkg/server"
 	"github.com/rancher/steve/pkg/server/router"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apiserver/pkg/endpoints/request"
@@ -57,7 +56,7 @@ type Server struct {
 	ClusterName     string
 
 	authMiddleware      auth.Middleware
-	controllers         *steveserver.Controllers
+	controllers         *Controllers
 	needControllerStart bool
 	next                http.Handler
 	router              router.RouterFunc
@@ -68,7 +67,7 @@ type Server struct {
 
 type Options struct {
 	// Controllers If the controllers are passed in the caller must also start the controllers
-	Controllers                *steveserver.Controllers
+	Controllers                *Controllers
 	ClientFactory              *client.Factory
 	AccessSetLookup            accesscontrol.AccessSetLookup
 	AuthMiddleware             auth.Middleware
@@ -123,7 +122,7 @@ func setDefaults(server *Server) error {
 
 	if server.controllers == nil {
 		var err error
-		server.controllers, err = steveserver.NewController(server.RESTConfig, nil)
+		server.controllers, err = NewController(server.RESTConfig, nil)
 		server.needControllerStart = true
 		if err != nil {
 			return err
