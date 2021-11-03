@@ -27,7 +27,6 @@ import (
 	"github.com/rancher/steve/pkg/accesscontrol"
 	"github.com/rancher/steve/pkg/aggregation"
 	"github.com/rancher/steve/pkg/auth"
-	"github.com/rancher/steve/pkg/client"
 	"github.com/rancher/steve/pkg/clustercache"
 	schemacontroller "github.com/rancher/steve/pkg/controllers/schema"
 	"github.com/rancher/steve/pkg/resources/common"
@@ -44,7 +43,7 @@ var ErrConfigRequired = errors.New("rest config is required")
 type Server struct {
 	http.Handler
 
-	ClientFactory   *client.Factory
+	ClientFactory   *Factory
 	ClusterCache    clustercache.ClusterCache
 	SchemaFactory   schema.Factory
 	RESTConfig      *rest.Config
@@ -68,7 +67,7 @@ type Server struct {
 type Options struct {
 	// Controllers If the controllers are passed in the caller must also start the controllers
 	Controllers                *Controllers
-	ClientFactory              *client.Factory
+	ClientFactory              *Factory
 	AccessSetLookup            accesscontrol.AccessSetLookup
 	AuthMiddleware             auth.Middleware
 	Next                       http.Handler
@@ -148,7 +147,7 @@ func setup(ctx context.Context, server *Server) error {
 
 	cf := server.ClientFactory
 	if cf == nil {
-		cf, err = client.NewFactory(server.RESTConfig, server.authMiddleware != nil)
+		cf, err = NewFactory(server.RESTConfig, server.authMiddleware != nil)
 		if err != nil {
 			return err
 		}
