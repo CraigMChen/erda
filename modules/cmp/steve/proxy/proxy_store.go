@@ -162,7 +162,8 @@ func rowToObject(obj *unstructured.Unstructured) {
 		return
 	}
 	if obj.Object["kind"] != "Table" ||
-		obj.Object["apiVersion"] != "meta.k8s.io/v1" {
+		(obj.Object["apiVersion"] != "meta.k8s.io/v1" &&
+			obj.Object["apiVersion"] != "meta.k8s.io/v1beta1") {
 		return
 	}
 
@@ -174,7 +175,8 @@ func rowToObject(obj *unstructured.Unstructured) {
 
 func tableToList(obj *unstructured.UnstructuredList) {
 	if obj.Object["kind"] != "Table" ||
-		obj.Object["apiVersion"] != "meta.k8s.io/v1" {
+		(obj.Object["apiVersion"] != "meta.k8s.io/v1" &&
+			obj.Object["apiVersion"] != "meta.k8s.io/v1beta1") {
 		return
 	}
 
