@@ -262,7 +262,9 @@ func (p *provider) ListSteveResource(ctx context.Context, req *apistructs.SteveR
 		return p.list(apiOp, resp, req.ClusterName)
 	}
 
+	logrus.Infof("[DEBUG] start check access for %s", req.Type)
 	hasAccess, err := p.SteveAggregator.HasAccess(req.ClusterName, apiOp, "list")
+	logrus.Infof("[DEBUG] end check access for %s", req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -271,24 +273,28 @@ func (p *provider) ListSteveResource(ctx context.Context, req *apistructs.SteveR
 	}
 
 	key := CacheKey{
-		Kind:        apiOp.Type,
-		Namespace:   apiOp.Namespace,
+		Kind:        string(req.Type),
+		Namespace:   req.Namespace,
 		ClusterName: req.ClusterName,
 	}
+	logrus.Infof("[DEBUG] start get cache for %s", req.Type)
 	values, lexpired, err := cache.GetFreeCache().Get(key.GetKey())
+	logrus.Infof("[DEBUG] end get cache for %s", req.Type)
 	if values == nil || err != nil {
 		if apiOp.Namespace != "" {
 			key := CacheKey{
-				Kind:        apiOp.Type,
+				Kind:        string(req.Type),
 				Namespace:   "",
 				ClusterName: req.ClusterName,
 			}
 			allNsValues, expired, err := cache.GetFreeCache().Get(key.GetKey())
 			if allNsValues != nil && err == nil && !expired {
+				logrus.Infof("get %s from allNs cache", req.Type)
 				return getByNamespace(allNsValues[0].Value().([]types.APIObject), apiOp.Namespace), nil
 			}
 		}
 
+		logrus.Infof("cache not found, list %s from server", req.Type)
 		queryQueue.Acquire(req.ClusterName, 1)
 		list, err := p.list(apiOp, resp, req.ClusterName)
 		queryQueue.Release(req.ClusterName, 1)
@@ -311,8 +317,12 @@ func (p *provider) ListSteveResource(ctx context.Context, req *apistructs.SteveR
 			task := &queue.Task{
 				Key: key.GetKey(),
 				Do: func() {
+					logrus.Infof("[DEBUG] start update cache for %s", req.Type)
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-					defer cancel()
+					defer func() {
+						cancel()
+						logrus.Infof("[DEBUG] end update cache for %s", req.Type)
+					}()
 					apiOp, resp, err := p.getApiRequest(ctx, &tmp)
 					if err != nil {
 						logrus.Errorf("failed to get api request in task, %v", err)
