@@ -28,10 +28,7 @@ users:
     token: "${TOKEN}"
 EOF
 
-cat >> .bash_profile <<EOF
-PS1="\w > "
-EOF
-
+unset TOKEN
 chmod 777 .kube
 chmod 666 .kube/config
-exec su - -s /bin/bash nobody
+exec su -s /bin/bash nobody
