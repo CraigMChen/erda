@@ -64,7 +64,7 @@ func (p *PodsCharts) ParsePodStatus(ctx context.Context, state string, cnt, tot 
 	percent := float64(cnt) / float64(tot) * 100
 	status := Pie{
 		Name:  cputil.I18n(ctx, state),
-		Value: percent,
+		Value: cnt,
 		Color: color,
 		Total: tot,
 		Infos: []Info{
