@@ -166,6 +166,9 @@ func parseVars(req *http.Request) map[string]string {
 	s.Path("/api/{version}/namespaces/{namespace}/{type}")
 	s.Path("/api/{version}/namespaces/{namespace}/{type}/{name}")
 	s.Path("/api/{version}/namespaces/{namespace}/{type}/{name}/{link}")
+	s.Path("/version")
+	s.Path("/apis")
+	s.Path("/openapi")
 	s.PathPrefix("/api")
 
 	vars := make(map[string]string)
