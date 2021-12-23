@@ -311,3 +311,10 @@ component-protocol.components.issue-kanban.issueOperations:
 component-protocol.components.issue-kanban.content:
 component-protocol.components.issue-kanban.inputFilter:
 
+# release-manage
+component-protocol.components.release-manage.releaseManage:
+component-protocol.components.release-manage.content:
+component-protocol.components.release-manage.head:
+component-protocol.components.release-manage.releaseTable:
+component-protocol.components.release-manage.inputFilter:
+component-protocol.components.release-manage.releaseFilter:
