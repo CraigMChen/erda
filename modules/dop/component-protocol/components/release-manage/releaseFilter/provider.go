@@ -151,7 +151,7 @@ func (f *ReleaseFilter) renderFilter() error {
 	}
 
 	if !f.State.IsProjectRelease {
-		appResp, err := f.bdl.GetAppsByProject(uint64(f.State.ProjectID), orgID, userID)
+		appResp, err := f.bdl.GetMyAppsByProject(userID, orgID, uint64(f.State.ProjectID), "")
 		if err != nil {
 			return errors.Errorf("failed to list apps, %v", err)
 		}
@@ -266,15 +266,15 @@ func (f *ReleaseFilter) renderFilter() error {
 }
 
 func (f *ReleaseFilter) decodeURLQuery() error {
-	urlQuery, ok := f.sdk.InParams["releaseFilter__urlQuery"].(string)
+	query, ok := f.sdk.InParams["releaseFilter__urlQuery"].(string)
 	if !ok {
 		return nil
 	}
-	decoded, err := base64.StdEncoding.DecodeString(urlQuery)
+	decode, err := base64.StdEncoding.DecodeString(query)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(decoded, &f.State.Values)
+	return json.Unmarshal(decode, &f.State.Values)
 }
 
 func (f *ReleaseFilter) encodeURLQuery() error {
