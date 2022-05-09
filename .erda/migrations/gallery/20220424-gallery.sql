@@ -7,8 +7,8 @@ CREATE TABLE `erda_gallery_opus`
 
     `org_id`       VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`     VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `level`        VARCHAR(32)  NOT NULL default 'org' COMMENT 'opus 级别: sys, org',
     `type`         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'opus 类型',
@@ -31,8 +31,8 @@ CREATE TABLE `erda_gallery_opus_version`
 
     `org_id`          VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`        VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`      VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`      VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`         VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
 
@@ -57,8 +57,8 @@ CREATE TABLE `erda_gallery_opus_presentation`
 
     `org_id`            VARCHAR(36)   NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`          VARCHAR(50)   NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`        VARCHAR(191)  NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`        VARCHAR(191)  NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`           VARCHAR(36)   NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id`        VARCHAR(36)   NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -95,8 +95,8 @@ CREATE TABLE `erda_gallery_opus_readme`
 
     `org_id`     VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`   VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`    VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -120,8 +120,8 @@ CREATE TABLE `erda_gallery_opus_extra`
 
     `org_id`     VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`   VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`    VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -142,8 +142,8 @@ CREATE TABLE `erda_gallery_opus_installation`
 
     `org_id`     VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`   VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`    VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
