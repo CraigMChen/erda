@@ -31,3 +31,10 @@ i18n@cp:
 i18n:
   common:
     - modules/apps/personal-workbench/i18n/common.yaml # TODO : distinguish between admin global common.yaml and cp/common.yaml
+
+gorm.v2:
+  host: "${MYSQL_HOST}"
+  port: "${MYSQL_PORT}"
+  username: "${MYSQL_USERNAME}"
+  password: "${MYSQL_PASSWORD}"
+  database: "${MYSQL_DATABASE}"
