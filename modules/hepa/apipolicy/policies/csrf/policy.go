@@ -132,7 +132,13 @@ func (policy Policy) ParseConfig(dto apipolicy.PolicyDto, ctx map[string]interfa
 	}
 	req := policy.buildPluginReq(policyDto)
 
-	var routes = make(map[string]struct{})
+	type routesInfo struct {
+		RouteID string
+		From    string
+		FromID  string
+		Found   error
+	}
+	var routes = make(map[string]routesInfo)
 	packageAPIDB, _ := db.NewGatewayPackageApiServiceImpl()
 	apiDB, _ := db.NewGatewayApiServiceImpl()
 	routeDB, _ := db.NewGatewayRouteServiceImpl()
@@ -152,7 +158,12 @@ func (policy Policy) ParseConfig(dto apipolicy.PolicyDto, ctx map[string]interfa
 				WithField("tb_gateway_package_api.id", api.Id).
 				Warnf("failed to routeDB.GetByApiId(%s): not found", api.Id)
 		default:
-			routes[route.RouteId] = struct{}{}
+			routes[route.RouteId] = routesInfo{
+				RouteID: route.Id,
+				From:    "tb_gateway_package_api.id",
+				FromID:  api.Id,
+				Found:   nil,
+			}
 		}
 
 		if api.DiceApiId == "" {
@@ -177,9 +188,14 @@ func (policy Policy) ParseConfig(dto apipolicy.PolicyDto, ctx map[string]interfa
 			case route == nil:
 				l.WithError(err).
 					WithField("tb_gateway_package_api.id", api.Id).
-					Warnf("failed to routeDB.GetByApiId(%s): not found", api.Id)
+					Warnf("failed to routeDB.GetByApiId(%s): not found", gatewayApi.Id)
 			default:
-				routes[route.RouteId] = struct{}{}
+				routes[route.RouteId] = routesInfo{
+					RouteID: route.Id,
+					From:    "tb_gateway_package_api.dice_api_id",
+					FromID:  api.DiceApiId,
+					Found:   nil,
+				}
 			}
 		}
 	}
@@ -209,6 +225,12 @@ func (policy Policy) ParseConfig(dto apipolicy.PolicyDto, ctx map[string]interfa
 		return res, nil
 	}
 
+	for routeID, routeInf := range routes {
+		routeReq := *req
+		routeReq.RouteId = routeID
+		_, routeInf.Found = adapter.GetPlugin(&routeReq)
+		l.WithError(err).Infof("route info: %+v", routeInf)
+	}
 	for routeID := range routes {
 		routeReq := *req
 		routeReq.RouteId = routeID

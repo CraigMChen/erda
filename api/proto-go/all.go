@@ -4,6 +4,7 @@ package proto
 
 import (
 	_ "github.com/erda-project/erda-proto-go/admin/pb"
+	_ "github.com/erda-project/erda-proto-go/apps/gallery/pb"
 	_ "github.com/erda-project/erda-proto-go/cmp/alert/pb"
 	_ "github.com/erda-project/erda-proto-go/cmp/dashboard/pb"
 	_ "github.com/erda-project/erda-proto-go/common/pb"
