@@ -43,3 +43,5 @@ gorm.v2:
   username: "${MYSQL_USERNAME}"
   password: "${MYSQL_PASSWORD}"
   database: "${MYSQL_DATABASE}"
+
+erda.apps.easy-memory-cache:
