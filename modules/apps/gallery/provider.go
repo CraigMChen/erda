@@ -528,7 +528,7 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		l.WithError(err).Errorln("failed to Delete installation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err2 := p.D.Where(map[string]interface{}{"opus_id": req.GetOpusID()}).Find([]*model.OpusVersion{}).Error; err2 != nil && errors.Is(err2, gorm.ErrRecordNotFound) {
+	if err2 := p.D.Where(map[string]interface{}{"opus_id": req.GetOpusID()}).Find(new([]*model.OpusVersion)).Error; err2 != nil && errors.Is(err2, gorm.ErrRecordNotFound) {
 		if err = tx.Delete(model.Opus{}).Where(map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
 			l.WithError(err).Errorln("failed to Delete opuses")
 			return nil, apierr.PutOffArtifacts.InternalError(err)
@@ -630,7 +630,7 @@ func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opuses
 
 	if err := p.D.Limit(pageSize).Offset((pageNo-1)*pageSize).
 		Where("id IN (?)", opusesIDs).
-		Find(opuses).
+		Find(&opuses).
 		Count(&total).
 		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		l.WithError(err).Errorln("failed to Find opuses")
