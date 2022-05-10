@@ -85,8 +85,12 @@ func (p *provider) Init(ctx servicehub.Context) error {
 func (p *provider) ListOpusTypes(ctx context.Context, _ *commonPb.VoidRequest) (*pb.ListOpusTypesRespData, error) {
 	// todo: i18n
 	var data pb.ListOpusTypesRespData
-	for type_, name := range apistructs.OpusTypes {
-		data.List = append(data.List, &pb.OpusType{Type: type_.String(), Name: name})
+	for type_, name := range apistructs.OpusTypeNames {
+		data.List = append(data.List, &pb.OpusType{
+			Type:        type_.String(),
+			Name:        name,
+			DisplayName: apistructs.OpusTypeDisplayNames[type_],
+		})
 	}
 	data.Total = uint32(len(data.List))
 	return &data, nil
@@ -218,7 +222,7 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 		UpdaterID:        opus.UpdaterID,
 		Level:            opus.Level,
 		Type:             opus.Type,
-		Name:             apistructs.OpusTypes[apistructs.OpusType(opus.Type)],
+		Name:             apistructs.OpusTypeNames[apistructs.OpusType(opus.Type)],
 		DisplayName:      opus.DisplayName,
 		Catalog:          opus.Catalog,
 		DefaultVersionID: opus.DefaultVersionID,
@@ -664,7 +668,7 @@ func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opuses
 			CreatorID:   opus.CreatorID,
 			UpdaterID:   opus.UpdaterID,
 			Type:        opus.Type,
-			TypeName:    apistructs.OpusTypes[apistructs.OpusType(opus.Type)],
+			TypeName:    apistructs.OpusTypeNames[apistructs.OpusType(opus.Type)],
 			Name:        opus.Name,
 			DisplayName: opus.DisplayName,
 			Summary:     "",

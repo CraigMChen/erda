@@ -180,6 +180,7 @@ message ListOpusTypesRespData {
 message OpusType {
   string type = 1;
   string name = 2;
+  string displayName = 3;
 }
 
 message PutOnArtifactsReq {

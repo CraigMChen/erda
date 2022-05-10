@@ -37,7 +37,12 @@ const (
 )
 
 var (
-	OpusTypes = map[OpusType]string{
+	OpusTypeNames = map[OpusType]string{
+		OpusTypeExtensionAction:  "Action",
+		OpusTypeExtensionAddon:   "Addon",
+		OpusTypeArtifactsProject: "Erda Artifacts",
+	}
+	OpusTypeDisplayNames = map[OpusType]string{
 		OpusTypeExtensionAction:  "Action",
 		OpusTypeExtensionAddon:   "Addon",
 		OpusTypeArtifactsProject: "Erda Artifacts",

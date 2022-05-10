@@ -272,6 +272,8 @@ func (m *OpusType) UnmarshalURLValues(prefix string, values url.Values) error {
 				m.Type = vals[0]
 			case "name":
 				m.Name = vals[0]
+			case "displayName":
+				m.DisplayName = vals[0]
 			}
 		}
 	}
