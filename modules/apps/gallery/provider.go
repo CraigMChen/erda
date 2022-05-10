@@ -74,7 +74,7 @@ type provider struct {
 func (p *provider) Init(ctx servicehub.Context) error {
 	p.l = logrus.WithField("provider", name)
 	p.l.Infoln("Init")
-	if p.R == nil {
+	if p.R != nil {
 		p.l.Infoln("register self")
 		pb.RegisterGalleryImp(p.R, p, apis.Options())
 	}
