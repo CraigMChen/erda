@@ -57,6 +57,8 @@ var _ json.Marshaler = (*ListOpusVersionsRespData)(nil)
 var _ json.Unmarshaler = (*ListOpusVersionsRespData)(nil)
 var _ json.Marshaler = (*ListOpusVersionRespDataVersion)(nil)
 var _ json.Unmarshaler = (*ListOpusVersionRespDataVersion)(nil)
+var _ json.Marshaler = (*PutOnOpusResp)(nil)
+var _ json.Unmarshaler = (*PutOnOpusResp)(nil)
 
 // ListOpusReq implement json.Marshaler.
 func (m *ListOpusReq) MarshalJSON() ([]byte, error) {
@@ -449,6 +451,24 @@ func (m *ListOpusVersionRespDataVersion) MarshalJSON() ([]byte, error) {
 
 // ListOpusVersionRespDataVersion implement json.Marshaler.
 func (m *ListOpusVersionRespDataVersion) UnmarshalJSON(b []byte) error {
+	return (&protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}).Unmarshal(b, m)
+}
+
+// PutOnOpusResp implement json.Marshaler.
+func (m *PutOnOpusResp) MarshalJSON() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := (&jsonpb.Marshaler{
+		OrigName:     false,
+		EnumsAsInts:  false,
+		EmitDefaults: true,
+	}).Marshal(buf, m)
+	return buf.Bytes(), err
+}
+
+// PutOnOpusResp implement json.Marshaler.
+func (m *PutOnOpusResp) UnmarshalJSON(b []byte) error {
 	return (&protojson.UnmarshalOptions{
 		DiscardUnknown: true,
 	}).Unmarshal(b, m)

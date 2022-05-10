@@ -203,3 +203,6 @@ func (this *ListOpusVersionRespDataVersion) Validate() error {
 	}
 	return nil
 }
+func (this *PutOnOpusResp) Validate() error {
+	return nil
+}

@@ -51,9 +51,9 @@ service Gallery {
     };
   }
 
-  rpc PutOnArtifacts(PutOnArtifactsReq) returns (common.VoidResponse) {}
+  rpc PutOnArtifacts(PutOnArtifactsReq) returns (PutOnOpusResp) {}
   rpc PutOffArtifacts(PutOffArtifactsReq) returns (common.VoidResponse) {}
-  rpc PutOnExtensions(PubOnExtensionsReq) returns (common.VoidResponse) {}
+  rpc PutOnExtensions(PubOnExtensionsReq) returns (PutOnOpusResp) {}
 }
 
 message ListOpusReq {
@@ -318,4 +318,9 @@ message ListOpusVersionRespDataVersion {
   string readmeLang = 40;
   string readmeLangName = 41;
   string readme = 42;
+}
+
+message PutOnOpusResp {
+  string opusID = 1;
+  string versionID = 2;
 }

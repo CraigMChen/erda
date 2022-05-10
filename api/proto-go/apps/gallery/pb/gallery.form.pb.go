@@ -31,6 +31,7 @@ var _ urlenc.URLValuesUnmarshaler = (*ListOpusVersionsReq)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*ListOpusVersionsResp)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*ListOpusVersionsRespData)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*ListOpusVersionRespDataVersion)(nil)
+var _ urlenc.URLValuesUnmarshaler = (*PutOnOpusResp)(nil)
 
 // ListOpusReq implement urlenc.URLValuesUnmarshaler.
 func (m *ListOpusReq) UnmarshalURLValues(prefix string, values url.Values) error {
@@ -798,6 +799,21 @@ func (m *ListOpusVersionRespDataVersion) UnmarshalURLValues(prefix string, value
 				m.ReadmeLangName = vals[0]
 			case "readme":
 				m.Readme = vals[0]
+			}
+		}
+	}
+	return nil
+}
+
+// PutOnOpusResp implement urlenc.URLValuesUnmarshaler.
+func (m *PutOnOpusResp) UnmarshalURLValues(prefix string, values url.Values) error {
+	for key, vals := range values {
+		if len(vals) > 0 {
+			switch prefix + key {
+			case "opusID":
+				m.OpusID = vals[0]
+			case "versionID":
+				m.VersionID = vals[0]
 			}
 		}
 	}

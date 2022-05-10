@@ -50,7 +50,7 @@ func (s *galleryWrapper) ListOpusVersions(ctx context.Context, req *pb.ListOpusV
 	return s.client.ListOpusVersions(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }
 
-func (s *galleryWrapper) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq) (*pb1.VoidResponse, error) {
+func (s *galleryWrapper) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq) (*pb.PutOnOpusResp, error) {
 	return s.client.PutOnArtifacts(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }
 
@@ -58,6 +58,6 @@ func (s *galleryWrapper) PutOffArtifacts(ctx context.Context, req *pb.PutOffArti
 	return s.client.PutOffArtifacts(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }
 
-func (s *galleryWrapper) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsReq) (*pb1.VoidResponse, error) {
+func (s *galleryWrapper) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsReq) (*pb.PutOnOpusResp, error) {
 	return s.client.PutOnExtensions(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }

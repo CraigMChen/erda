@@ -273,7 +273,7 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 	return &resp, nil
 }
 
-func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq) (*commonPb.VoidResponse, error) {
+func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq) (*pb.PutOnOpusResp, error) {
 	l := p.l.WithField("func", "PutOnArtifacts").
 		WithField("name", req.GetName()).
 		WithField("version", req.GetVersion())
@@ -458,7 +458,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
 
-	return new(commonPb.VoidResponse), nil
+	return &pb.PutOnOpusResp{OpusID: version.OpusID, VersionID: version.ID.String}, nil
 }
 
 func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsReq) (*commonPb.VoidResponse, error) {
@@ -537,7 +537,7 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 	return new(commonPb.VoidResponse), nil
 }
 
-func (p *provider) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsReq) (*commonPb.VoidResponse, error) {
+func (p *provider) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsReq) (*pb.PutOnOpusResp, error) {
 	l := p.l.WithField("func", "PutOnExtensions").
 		WithFields(map[string]interface{}{
 			"orgID":   req.GetOrgID(),
@@ -723,7 +723,7 @@ func (p *provider) listOpusWithKeyword(ctx context.Context, pageSize, pageNo int
 	return p.listOpusByIDs(ctx, pageSize, pageNo, opusesIDs)
 }
 
-func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID string, opus *model.Opus, version *model.OpusVersion, req *pb.PubOnExtensionsReq) (*commonPb.VoidResponse, error) {
+func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID string, opus *model.Opus, version *model.OpusVersion, req *pb.PubOnExtensionsReq) (*pb.PutOnOpusResp, error) {
 	l = l.WithField("func", "updateExtension")
 
 	var err error
@@ -832,10 +832,10 @@ func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID 
 		return nil, apierr.PutOnExtension.InternalError(err)
 	}
 
-	return new(commonPb.VoidResponse), nil
+	return &pb.PutOnOpusResp{OpusID: version.OpusID, VersionID: version.ID.String}, nil
 }
 
-func (p *provider) createExtensions(ctx context.Context, l *logrus.Entry, userID string, opus *model.Opus, req *pb.PubOnExtensionsReq) (*commonPb.VoidResponse, error) {
+func (p *provider) createExtensions(ctx context.Context, l *logrus.Entry, userID string, opus *model.Opus, req *pb.PubOnExtensionsReq) (*pb.PutOnOpusResp, error) {
 	l = l.WithField("func", "createExtensions")
 
 	var err error
@@ -944,5 +944,5 @@ func (p *provider) createExtensions(ctx context.Context, l *logrus.Entry, userID
 		return nil, apierr.PutOnExtension.InternalError(err)
 	}
 
-	return new(commonPb.VoidResponse), nil
+	return &pb.PutOnOpusResp{OpusID: version.OpusID, VersionID: version.ID.String}, nil
 }

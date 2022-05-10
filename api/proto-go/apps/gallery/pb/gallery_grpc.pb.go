@@ -31,9 +31,9 @@ type GalleryClient interface {
 	// zh_CN: 查询 org 下所有的 Opus.
 	ListOpus(ctx context.Context, in *ListOpusReq, opts ...grpc.CallOption) (*ListOpusResp, error)
 	ListOpusVersions(ctx context.Context, in *ListOpusVersionsReq, opts ...grpc.CallOption) (*ListOpusVersionsResp, error)
-	PutOnArtifacts(ctx context.Context, in *PutOnArtifactsReq, opts ...grpc.CallOption) (*pb.VoidResponse, error)
+	PutOnArtifacts(ctx context.Context, in *PutOnArtifactsReq, opts ...grpc.CallOption) (*PutOnOpusResp, error)
 	PutOffArtifacts(ctx context.Context, in *PutOffArtifactsReq, opts ...grpc.CallOption) (*pb.VoidResponse, error)
-	PutOnExtensions(ctx context.Context, in *PubOnExtensionsReq, opts ...grpc.CallOption) (*pb.VoidResponse, error)
+	PutOnExtensions(ctx context.Context, in *PubOnExtensionsReq, opts ...grpc.CallOption) (*PutOnOpusResp, error)
 }
 
 type galleryClient struct {
@@ -71,8 +71,8 @@ func (c *galleryClient) ListOpusVersions(ctx context.Context, in *ListOpusVersio
 	return out, nil
 }
 
-func (c *galleryClient) PutOnArtifacts(ctx context.Context, in *PutOnArtifactsReq, opts ...grpc.CallOption) (*pb.VoidResponse, error) {
-	out := new(pb.VoidResponse)
+func (c *galleryClient) PutOnArtifacts(ctx context.Context, in *PutOnArtifactsReq, opts ...grpc.CallOption) (*PutOnOpusResp, error) {
+	out := new(PutOnOpusResp)
 	err := c.cc.Invoke(ctx, "/erda.apps.gallery.Gallery/PutOnArtifacts", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -89,8 +89,8 @@ func (c *galleryClient) PutOffArtifacts(ctx context.Context, in *PutOffArtifacts
 	return out, nil
 }
 
-func (c *galleryClient) PutOnExtensions(ctx context.Context, in *PubOnExtensionsReq, opts ...grpc.CallOption) (*pb.VoidResponse, error) {
-	out := new(pb.VoidResponse)
+func (c *galleryClient) PutOnExtensions(ctx context.Context, in *PubOnExtensionsReq, opts ...grpc.CallOption) (*PutOnOpusResp, error) {
+	out := new(PutOnOpusResp)
 	err := c.cc.Invoke(ctx, "/erda.apps.gallery.Gallery/PutOnExtensions", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -111,9 +111,9 @@ type GalleryServer interface {
 	// zh_CN: 查询 org 下所有的 Opus.
 	ListOpus(context.Context, *ListOpusReq) (*ListOpusResp, error)
 	ListOpusVersions(context.Context, *ListOpusVersionsReq) (*ListOpusVersionsResp, error)
-	PutOnArtifacts(context.Context, *PutOnArtifactsReq) (*pb.VoidResponse, error)
+	PutOnArtifacts(context.Context, *PutOnArtifactsReq) (*PutOnOpusResp, error)
 	PutOffArtifacts(context.Context, *PutOffArtifactsReq) (*pb.VoidResponse, error)
-	PutOnExtensions(context.Context, *PubOnExtensionsReq) (*pb.VoidResponse, error)
+	PutOnExtensions(context.Context, *PubOnExtensionsReq) (*PutOnOpusResp, error)
 }
 
 // UnimplementedGalleryServer should be embedded to have forward compatible implementations.
@@ -129,13 +129,13 @@ func (*UnimplementedGalleryServer) ListOpus(context.Context, *ListOpusReq) (*Lis
 func (*UnimplementedGalleryServer) ListOpusVersions(context.Context, *ListOpusVersionsReq) (*ListOpusVersionsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOpusVersions not implemented")
 }
-func (*UnimplementedGalleryServer) PutOnArtifacts(context.Context, *PutOnArtifactsReq) (*pb.VoidResponse, error) {
+func (*UnimplementedGalleryServer) PutOnArtifacts(context.Context, *PutOnArtifactsReq) (*PutOnOpusResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutOnArtifacts not implemented")
 }
 func (*UnimplementedGalleryServer) PutOffArtifacts(context.Context, *PutOffArtifactsReq) (*pb.VoidResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutOffArtifacts not implemented")
 }
-func (*UnimplementedGalleryServer) PutOnExtensions(context.Context, *PubOnExtensionsReq) (*pb.VoidResponse, error) {
+func (*UnimplementedGalleryServer) PutOnExtensions(context.Context, *PubOnExtensionsReq) (*PutOnOpusResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PutOnExtensions not implemented")
 }
 
