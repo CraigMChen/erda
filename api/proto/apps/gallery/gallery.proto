@@ -79,7 +79,7 @@ message ListOpusRespDataItem {
   string id = 1;
   google.protobuf.Timestamp createdAt = 2;
   google.protobuf.Timestamp updatedAt = 3;
-  string orgID = 4;
+  uint32 orgID = 4;
   string orgName = 5;
   string creatorID = 6;
   string updaterID = 7;
@@ -184,7 +184,7 @@ message OpusType {
 }
 
 message PutOnArtifactsReq {
-  string orgID = 1;
+  uint32 orgID = 1;
   string userID = 2;
 
   string name = 4;
@@ -220,14 +220,14 @@ message ArtifactsInstallation {
 }
 
 message PutOffArtifactsReq {
-  string orgID = 1;
+  uint32 orgID = 1;
   string userID = 2;
   string opusID = 3;
   string versionID = 4;
 }
 
 message PubOnExtensionsReq {
-  string orgID = 1;
+  uint32 orgID = 1;
   string userID = 2;
 
   string type = 3;
@@ -273,7 +273,7 @@ message ListOpusVersionsRespData {
   string id = 1;
   google.protobuf.Timestamp createdAt = 2;
   google.protobuf.Timestamp updatedAt = 3;
-  string orgID = 4;
+  uint32 orgID = 4;
   string orgName = 5;
   string creatorID = 6;
   string updaterID = 7;

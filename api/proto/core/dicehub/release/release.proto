@@ -429,8 +429,9 @@ message ReleaseListRequest {
   string isStable = 7;
   string isFormal = 8;
   string isProjectRelease = 9;
-  repeated string userID = 10 [json_name = "userId"];
-  string version = 11;
+  string from = 10;
+  repeated string userID = 11 [json_name = "userId"];
+  string version = 12;
   string commitID = 13 [json_name = "commitId"];
   repeated uint64 tags = 14;
 

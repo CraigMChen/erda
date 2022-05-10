@@ -60,6 +60,7 @@ type ReleaseService struct {
 	Etcd            *clientv3.Client
 	Config          *releaseConfig
 	ReleaseRule     *release_rule.ReleaseRule
+	opus            pb.OpusServer
 }
 
 // CreateRelease POST /api/releases release create release
@@ -610,6 +611,23 @@ func (s *ReleaseService) ListRelease(ctx context.Context, req *pb.ReleaseListReq
 		}
 	}
 
+	if req.GetFrom() == "gallery" {
+		artifacts, err := s.opus.ListArtifacts(ctx, &pb.ListArtifactsReq{
+			OrgID:  uint32(orgID),
+			UserID: identityInfo.UserID,
+		})
+		if err != nil {
+			logrus.WithError(err).Errorln("failed to ListArtifacts")
+			return nil, errors.Wrap(err, "failed to ListArtifacts")
+		}
+		if len(artifacts.Data) > 0 {
+			var releaseIDs []string
+			for k := range artifacts.Data {
+				releaseIDs = append(releaseIDs, k)
+			}
+			req.ReleaseID = strings.Join(releaseIDs, ",")
+		}
+	}
 	resp, err := s.List(orgID, params)
 	if err != nil {
 		return nil, apierrors.ErrListRelease.InternalError(err)

@@ -16,6 +16,7 @@ package db
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -188,6 +189,42 @@ func (client *ReleaseConfigDB) GetReleasesByParams(
 	}
 
 	return total, releases, nil
+}
+
+func (client *ReleaseConfigDB) GetReleasesWithPublished(orgID, pageSize, pageNo int64) (int64, []Release, error) {
+	var opuses []*ReleaseOpus
+	if err := client.Where("org_id = ?", orgID).
+		Where("deleted_at != ? AND deleted_at IS NOT NULL", time.Unix(0, 0)).
+		Find(&opuses).
+		Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return 0, nil, nil
+		}
+		return 0, nil, err
+	}
+
+	var (
+		releaseIDs []string
+		releases   []Release
+		order      = make(map[string]int)
+	)
+	for i, opus := range opuses {
+		releaseIDs = append(releaseIDs, opus.ReleaseID)
+		order[opus.ReleaseID] = i
+	}
+	if err := client.Where("release_id IN (?)", releaseIDs).
+		Limit(pageSize).Offset((pageNo - 1) * pageSize).
+		Order("updated_at DESC").
+		Find(&releases).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return 0, nil, nil
+		}
+		return 0, nil, err
+	}
+	sort.Slice(releases, func(i, j int) bool {
+		return order[releases[i].ReleaseID] < order[releases[j].ReleaseID]
+	})
+	return
 }
 
 // GetReleasesByAppAndVersion Get Release list by appID & version

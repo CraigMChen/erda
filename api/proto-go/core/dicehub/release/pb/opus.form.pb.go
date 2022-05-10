@@ -5,6 +5,7 @@ package pb
 
 import (
 	url "net/url"
+	strconv "strconv"
 
 	urlenc "github.com/erda-project/erda-infra/pkg/urlenc"
 )
@@ -23,7 +24,13 @@ func (m *PutOnArtifactsReq) UnmarshalURLValues(prefix string, values url.Values)
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
+			case "orgName":
+				m.OrgName = vals[0]
 			case "userID":
 				m.UserID = vals[0]
 			case "opusID":
@@ -44,7 +51,11 @@ func (m *PutOffArtifactsReq) UnmarshalURLValues(prefix string, values url.Values
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "userID":
 				m.UserID = vals[0]
 			case "releaseID":
@@ -61,11 +72,27 @@ func (m *ListArtifactsReq) UnmarshalURLValues(prefix string, values url.Values) 
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "userID":
 				m.UserID = vals[0]
 			case "releaseIDs":
 				m.ReleaseIDs = vals
+			case "pageNo":
+				val, err := strconv.ParseInt(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.PageNo = int32(val)
+			case "pageSize":
+				val, err := strconv.ParseInt(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.PageSize = int32(val)
 			}
 		}
 	}
@@ -74,6 +101,18 @@ func (m *ListArtifactsReq) UnmarshalURLValues(prefix string, values url.Values) 
 
 // ListArtifactsResp implement urlenc.URLValuesUnmarshaler.
 func (m *ListArtifactsResp) UnmarshalURLValues(prefix string, values url.Values) error {
+	for key, vals := range values {
+		if len(vals) > 0 {
+			switch prefix + key {
+			case "total":
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.Total = uint32(val)
+			}
+		}
+	}
 	return nil
 }
 

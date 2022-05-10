@@ -1,23 +1,23 @@
 CREATE TABLE `erda_gallery_opus`
 (
-    `id`           VARCHAR(36)  NOT NULL PRIMARY KEY COMMENT 'primary key',
-    `created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted_at`   DATETIME     NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
+    `id`                 VARCHAR(36)  NOT NULL PRIMARY KEY COMMENT 'primary key',
+    `created_at`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted_at`         DATETIME     NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
 
-    `org_id`       VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
-    `org_name`     VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `org_id`             BIGINT(20) NOT NULL DEFAULT 0 COMMENT 'org id',
+    `org_name`           VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
+    `creator_id`         VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`         VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
-    `level`        VARCHAR(32)  NOT NULL default 'org' COMMENT 'opus 级别: sys, org',
-    `type`         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'opus 类型',
-    `name`         VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'opus 标识',
-    `display_name` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'opus 名称',
-    `catalog`      VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '.catalog: 分目',
+    `level`              VARCHAR(32)  NOT NULL default 'org' COMMENT 'opus 级别: sys, org',
+    `type`               VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'opus 类型',
+    `name`               VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'opus 标识',
+    `display_name`       VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'opus 名称',
+    `catalog`            VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '.catalog: 分目',
 
-    `default_version_id` VARCHAR(36) NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
-    `latest_version_id` VARCHAR(36) NOT NULL DEFAULT '' COMMENT  'erda_gallery_opus_version.id',
+    `default_version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
+    `latest_version_id`  VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
 
     UNIQUE KEY uk_org_name_type (`org_id`, `name`, `type`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 表';
@@ -30,10 +30,10 @@ CREATE TABLE `erda_gallery_opus_version`
     `updated_at`      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted_at`      DATETIME     NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
 
-    `org_id`          VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
+    `org_id`          BIGINT(20) NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`        VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`      VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`         VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
 
@@ -44,7 +44,7 @@ CREATE TABLE `erda_gallery_opus_version`
     `check_valid_url` VARCHAR(512) NOT NULL DEFAULT '' COMMENT '检查有效性链接',
     `is_valid`        BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '有效性标识',
 
-    INDEX idx_opus_id (`opus_id`),
+    INDEX             idx_opus_id (`opus_id`),
     UNIQUE KEY uk_opus_id_version (`opus_id`, `version`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 版本';
 
@@ -56,10 +56,10 @@ CREATE TABLE `erda_gallery_opus_presentation`
     `updated_at`        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted_at`        DATETIME      NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
 
-    `org_id`            VARCHAR(36)   NOT NULL DEFAULT 0 COMMENT 'org id',
+    `org_id`            BIGINT(20) NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`          VARCHAR(50)   NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id`        VARCHAR(255)  NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id`        VARCHAR(255)  NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`           VARCHAR(36)   NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id`        VARCHAR(36)   NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -82,8 +82,8 @@ CREATE TABLE `erda_gallery_opus_presentation`
     `forms`             MEDIUMTEXT    NOT NULL COMMENT '表单结构',
     `i18n`              MEDIUMTEXT    NOT NULL COMMENT 'i18n 信息',
 
-    INDEX idx_opus_id (`opus_id`),
-    INDEX idx_version_id (`version_id`)
+    INDEX               idx_opus_id (`opus_id`),
+    INDEX               idx_version_id (`version_id`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT '如何展示 opus 的信息';
 
 
@@ -94,10 +94,10 @@ CREATE TABLE `erda_gallery_opus_readme`
     `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted_at` DATETIME     NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
 
-    `org_id`     VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
+    `org_id`     BIGINT(20) NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`   VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`    VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -106,8 +106,8 @@ CREATE TABLE `erda_gallery_opus_readme`
     `lang_name`  VARCHAR(32)  NOT NULL DEFAULT '' COMMENT '语言名称, 如 中文, English',
     `text`       LONGTEXT     NOT NULL COMMENT 'readme 文本',
 
-    INDEX idx_opus_id (`opus_id`),
-    INDEX idx_version_id (`version_id`),
+    INDEX        idx_opus_id (`opus_id`),
+    INDEX        idx_version_id (`version_id`),
     UNIQUE KEY uk_version_lang (`version_id`, `lang`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 的 readme 信息';
 
@@ -119,10 +119,10 @@ CREATE TABLE `erda_gallery_opus_installation`
     `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted_at` DATETIME     NOT NULL DEFAULT '1970-01-01 00:00:00' COMMENT '删除时间',
 
-    `org_id`     VARCHAR(36)  NOT NULL DEFAULT 0 COMMENT 'org id',
+    `org_id`     BIGINT(20) NOT NULL DEFAULT 0 COMMENT 'org id',
     `org_name`   VARCHAR(50)  NOT NULL DEFAULT '' COMMENT 'org name',
-    `creator_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
-    `updater_id`   VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
+    `creator_id` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'creator user id',
+    `updater_id` VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'updater user id',
 
     `opus_id`    VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus.id',
     `version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
@@ -130,6 +130,6 @@ CREATE TABLE `erda_gallery_opus_installation`
     `installer`  VARCHAR(32)  NOT NULL DEFAULT '' COMMENT '安装引擎',
     `spec`       MEDIUMTEXT   NOT NULL COMMENT '安装描述文本',
 
-    INDEX idx_opus_id (`opus_id`),
-    INDEX idx_version_id (`version_id`)
+    INDEX        idx_opus_id (`opus_id`),
+    INDEX        idx_version_id (`version_id`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 的安装信息';

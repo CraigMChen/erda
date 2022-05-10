@@ -157,7 +157,11 @@ func (m *ListOpusRespDataItem) UnmarshalURLValues(prefix string, values url.Valu
 				}
 				m.UpdatedAt.Nanos = int32(val)
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "orgName":
 				m.OrgName = vals[0]
 			case "creatorID":
@@ -286,7 +290,11 @@ func (m *PutOnArtifactsReq) UnmarshalURLValues(prefix string, values url.Values)
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "userID":
 				m.UserID = vals[0]
 			case "name":
@@ -371,7 +379,11 @@ func (m *PutOffArtifactsReq) UnmarshalURLValues(prefix string, values url.Values
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "userID":
 				m.UserID = vals[0]
 			case "opusID":
@@ -390,7 +402,11 @@ func (m *PubOnExtensionsReq) UnmarshalURLValues(prefix string, values url.Values
 		if len(vals) > 0 {
 			switch prefix + key {
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "userID":
 				m.UserID = vals[0]
 			case "type":
@@ -552,7 +568,11 @@ func (m *ListOpusVersionsResp) UnmarshalURLValues(prefix string, values url.Valu
 				if m.Data == nil {
 					m.Data = &ListOpusVersionsRespData{}
 				}
-				m.Data.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.Data.OrgID = uint32(val)
 			case "data.orgName":
 				if m.Data == nil {
 					m.Data = &ListOpusVersionsRespData{}
@@ -663,7 +683,11 @@ func (m *ListOpusVersionsRespData) UnmarshalURLValues(prefix string, values url.
 				}
 				m.UpdatedAt.Nanos = int32(val)
 			case "orgID":
-				m.OrgID = vals[0]
+				val, err := strconv.ParseUint(vals[0], 10, 32)
+				if err != nil {
+					return err
+				}
+				m.OrgID = uint32(val)
 			case "orgName":
 				m.OrgName = vals[0]
 			case "creatorID":

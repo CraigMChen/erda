@@ -24,27 +24,31 @@ service Opus {
 }
 
 message PutOnArtifactsReq {
-  string orgID = 1;
-  string userID = 2;
+  uint32 orgID = 1;
+  string orgName = 2;
+  string userID = 3;
   string opusID = 4;
   string opusVersionID = 5;
   string releaseID = 6;
 }
 
 message PutOffArtifactsReq {
-  string orgID = 1;
+  uint32 orgID = 1;
   string userID = 2;
   string releaseID = 3;
 }
 
 message ListArtifactsReq {
-  string orgID = 1;
+  uint32 orgID = 1;
   string userID = 2;
   repeated string releaseIDs = 3;
+  int32 pageNo = 4;
+  int32 pageSize = 5;
 }
 
 message ListArtifactsResp {
-  map<string, ListArtifactsRespItem> data = 1;
+  uint32 total = 1;
+  map<string, ListArtifactsRespItem> data = 2;
 }
 
 message ListArtifactsRespItem {

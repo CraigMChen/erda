@@ -26,6 +26,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	gormV2 "gorm.io/gorm"
 
 	"github.com/erda-project/erda-infra/base/logs"
 	"github.com/erda-project/erda-infra/base/servicehub"
@@ -57,15 +58,18 @@ type provider struct {
 	Log                   logs.Logger
 	Register              transport.Register `autowired:"service-register" required:"true"`
 	DB                    *gorm.DB           `autowired:"mysql-client"`
+	DBv2                  *gormV2.DB         `autowired:"mysql-gorm.v2-client"`
 	Etcd                  *clientv3.Client   `autowired:"etcd"`
 	releaseService        *ReleaseService
 	releaseGetDiceService *releaseGetDiceService
+	opusService           pb.OpusServer
 	bdl                   *bundle.Bundle
 }
 
 func (p *provider) Init(ctx servicehub.Context) error {
 	p.bdl = bundle.New(bundle.WithScheduler(), bundle.WithCoreServices())
 
+	p.opusService = &opus{d: &db.OpusDB{DB: p.DBv2}}
 	p.releaseService = &ReleaseService{
 		p:               p,
 		db:              &db.ReleaseConfigDB{DB: p.DB},
@@ -80,11 +84,13 @@ func (p *provider) Init(ctx servicehub.Context) error {
 		ReleaseRule: release_rule.New(release_rule.WithDBClient(&dbclient.DBClient{
 			DBEngine: &dbengine.DBEngine{DB: p.DB},
 		})),
+		opus: p.opusService,
 	}
 	p.releaseGetDiceService = &releaseGetDiceService{
 		p:  p,
 		db: &db.ReleaseConfigDB{DB: p.DB},
 	}
+
 	if p.Register != nil {
 		pb.RegisterReleaseServiceImp(p.Register, p.releaseService, apis.Options(),
 			transport.WithHTTPOptions(
@@ -274,6 +280,8 @@ func (p *provider) Provide(ctx servicehub.DependencyContext, args ...interface{}
 		return p.releaseService
 	case ctx.Service() == "erda.core.dicehub.release.ReleaseGetDiceService" || ctx.Type() == pb.ReleaseGetDiceServiceServerType() || ctx.Type() == pb.ReleaseGetDiceServiceHandlerType():
 		return p.releaseGetDiceService
+	case ctx.Service() == "erda.core.dicehub.release.Opus" || ctx.Type() == pb.OpusServerType() || ctx.Type() == pb.OpusHandlerType():
+		return p.opusService
 	}
 	return p
 }

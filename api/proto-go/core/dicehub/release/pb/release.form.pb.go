@@ -952,6 +952,8 @@ func (m *ReleaseListRequest) UnmarshalURLValues(prefix string, values url.Values
 				m.IsFormal = vals[0]
 			case "isProjectRelease":
 				m.IsProjectRelease = vals[0]
+			case "from":
+				m.From = vals[0]
 			case "userID":
 				m.UserID = vals
 			case "version":
