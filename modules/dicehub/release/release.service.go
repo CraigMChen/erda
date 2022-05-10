@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v2"
 
+	gallerypb "github.com/erda-project/erda-proto-go/apps/gallery/pb"
 	"github.com/erda-project/erda-proto-go/core/dicehub/release/pb"
 	"github.com/erda-project/erda/apistructs"
 	"github.com/erda-project/erda/bundle"
@@ -57,10 +58,11 @@ type ReleaseService struct {
 	imageDB         *imagedb.ImageConfigDB
 	extensionDB     *extensiondb.ExtensionConfigDB
 	bdl             *bundle.Bundle
+	opus            pb.OpusServer
+	gallery         gallerypb.GalleryServer
 	Etcd            *clientv3.Client
 	Config          *releaseConfig
 	ReleaseRule     *release_rule.ReleaseRule
-	opus            pb.OpusServer
 }
 
 // CreateRelease POST /api/releases release create release
@@ -464,7 +466,8 @@ func (s *ReleaseService) DeleteRelease(ctx context.Context, req *pb.ReleaseDelet
 
 	logrus.Infof("deleting release...releaseId: %s\n", releaseID)
 
-	if err := s.Delete(orgID, releaseID); err != nil {
+	opuses, err := s.opus.ListArtifacts(ctx, &pb.ListArtifactsReq{OrgID: uint32(orgID), ReleaseIDs: []string{req.ReleaseID}})
+	if err := s.Delete(orgID, opuses.Data, releaseID); err != nil {
 		return nil, apierrors.ErrDeleteRelease.InternalError(err)
 	}
 
@@ -526,7 +529,8 @@ func (s *ReleaseService) DeleteReleases(ctx context.Context, req *pb.ReleasesDel
 		}
 	}
 
-	if err := s.Delete(orgID, req.ReleaseId...); err != nil {
+	opuses, err := s.opus.ListArtifacts(ctx, &pb.ListArtifactsReq{OrgID: uint32(orgID), ReleaseIDs: req.ReleaseId})
+	if err := s.Delete(orgID, opuses.Data, req.ReleaseId...); err != nil {
 		return nil, apierrors.ErrDeleteRelease.InternalError(err)
 	}
 
@@ -582,11 +586,10 @@ func (s *ReleaseService) ListRelease(ctx context.Context, req *pb.ReleaseListReq
 	}
 	params := req
 
-	var orgID int64
+	orgID, err := getPermissionHeader(ctx)
 
 	if !identityInfo.IsInternalClient() {
-		orgID, err = getPermissionHeader(ctx)
-		if err != nil {
+		if orgID == 0 {
 			return nil, apierrors.ErrListRelease.NotLogin()
 		}
 
@@ -628,7 +631,7 @@ func (s *ReleaseService) ListRelease(ctx context.Context, req *pb.ReleaseListReq
 			req.ReleaseID = strings.Join(releaseIDs, ",")
 		}
 	}
-	resp, err := s.List(orgID, params)
+	resp, err := s.List(ctx, orgID, params)
 	if err != nil {
 		return nil, apierrors.ErrListRelease.InternalError(err)
 	}
@@ -889,6 +892,53 @@ func (s *ReleaseService) CheckVersion(ctx context.Context, req *pb.CheckVersionR
 			IsUnique: len(releases) == 0,
 		},
 	}, nil
+}
+
+// PutOnRelease puts on release to gallery.
+// Internal call only
+func (s *ReleaseService) PutOnRelease(ctx context.Context, req *pb.ReleasePutOnRequest) (*pb.ReleasePutOnResponse, error) {
+	internalClient := apis.GetHeader(ctx, httputil.InternalHeader)
+	if internalClient == "" {
+		return nil, apierrors.ErrPutOnRelease.AccessDenied()
+	}
+
+	resp, err := s.gallery.PutOnArtifacts(ctx, req.Req)
+	if err != nil {
+		return nil, apierrors.ErrPutOnRelease.InternalError(err)
+	}
+
+	org, err := s.bdl.GetOrg(req.Req.OrgID)
+	if err != nil {
+		return nil, apierrors.ErrPutOnRelease.InternalError(err)
+	}
+	_, err = s.opus.PutOnArtifacts(ctx, &pb.PutOnArtifactsReq{
+		OrgID:         req.Req.OrgID,
+		OrgName:       org.Name,
+		UserID:        req.Req.UserID,
+		OpusID:        resp.OpusID,
+		OpusVersionID: resp.VersionID,
+		ReleaseID:     req.Req.Installation.ReleaseID,
+	})
+	return &pb.ReleasePutOnResponse{}, err
+}
+
+func (s *ReleaseService) PutOffRelease(ctx context.Context, req *pb.ReleasePutOffRequest) (*pb.ReleasePutOffResponse, error) {
+	internalClient := apis.GetHeader(ctx, httputil.InternalHeader)
+	if internalClient == "" {
+		return nil, apierrors.ErrPutOnRelease.AccessDenied()
+	}
+
+	_, err := s.gallery.PutOffArtifacts(ctx, req.Req)
+	if err != nil {
+		return nil, apierrors.ErrPutOffRelease.InternalError(err)
+	}
+
+	_, err = s.opus.PutOffArtifacts(ctx, &pb.PutOffArtifactsReq{
+		OrgID:     req.Req.OrgID,
+		UserID:    req.Req.UserID,
+		ReleaseID: req.ReleaseID,
+	})
+	return &pb.ReleasePutOffResponse{}, nil
 }
 
 // GetDiceYAML get dice.yml context
@@ -1303,6 +1353,22 @@ func (s *ReleaseService) convertToReleaseResponse(release *db.Release) (*pb.Rele
 		return nil, err
 	}
 
+	var opusID, opusVersionID string
+	if release.IsProjectRelease {
+		opuses, err := s.opus.ListArtifacts(context.Background(), &pb.ListArtifactsReq{
+			OrgID:      uint32(release.OrgID),
+			ReleaseIDs: []string{release.ReleaseID},
+		})
+		if err != nil {
+			logrus.Errorf("failed to get opus for release %s, %v", release.ReleaseID, err)
+			return nil, err
+		}
+		opusInfo := opuses.Data[release.ReleaseID]
+		if opusInfo != nil {
+			opusID = opusInfo.OpusID
+			opusVersionID = opusInfo.OpusVersionID
+		}
+	}
 	respData := &pb.ReleaseGetResponseData{
 		ReleaseID:        release.ReleaseID,
 		ReleaseName:      release.ReleaseName,
@@ -1332,6 +1398,8 @@ func (s *ReleaseService) convertToReleaseResponse(release *db.Release) (*pb.Rele
 		IsLatest:         release.IsLatest,
 		Addons:           addons,
 		AddonYaml:        addonYaml,
+		OpusID:           opusID,
+		OpusVersionID:    opusVersionID,
 	}
 
 	if err = respDataReLoadImages(respData); err != nil {

@@ -33,6 +33,8 @@ import (
 	"github.com/erda-project/erda-infra/pkg/transport"
 	transhttp "github.com/erda-project/erda-infra/pkg/transport/http"
 	"github.com/erda-project/erda-infra/pkg/transport/http/encoding"
+	_ "github.com/erda-project/erda-infra/providers/mysql/v2"
+	gallerypb "github.com/erda-project/erda-proto-go/apps/gallery/pb"
 	"github.com/erda-project/erda-proto-go/core/dicehub/release/pb"
 	"github.com/erda-project/erda/apistructs"
 	"github.com/erda-project/erda/bundle"
@@ -56,10 +58,11 @@ type config struct {
 type provider struct {
 	Cfg                   *config
 	Log                   logs.Logger
-	Register              transport.Register `autowired:"service-register" required:"true"`
-	DB                    *gorm.DB           `autowired:"mysql-client"`
-	DBv2                  *gormV2.DB         `autowired:"mysql-gorm.v2-client"`
-	Etcd                  *clientv3.Client   `autowired:"etcd"`
+	Register              transport.Register      `autowired:"service-register" required:"true"`
+	DB                    *gorm.DB                `autowired:"mysql-client"`
+	DBv2                  *gormV2.DB              `autowired:"mysql-gorm.v2-client"`
+	Etcd                  *clientv3.Client        `autowired:"etcd"`
+	GallerySvc            gallerypb.GalleryServer `autowired:"erda.apps.gallery.Gallery"`
 	releaseService        *ReleaseService
 	releaseGetDiceService *releaseGetDiceService
 	opusService           pb.OpusServer
@@ -84,7 +87,8 @@ func (p *provider) Init(ctx servicehub.Context) error {
 		ReleaseRule: release_rule.New(release_rule.WithDBClient(&dbclient.DBClient{
 			DBEngine: &dbengine.DBEngine{DB: p.DB},
 		})),
-		opus: p.opusService,
+		opus:    p.opusService,
+		gallery: p.GallerySvc,
 	}
 	p.releaseGetDiceService = &releaseGetDiceService{
 		p:  p,
