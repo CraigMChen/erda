@@ -332,3 +332,9 @@ func (this *CheckVersionResponse) Validate() error {
 func (this *CheckVersionResponseData) Validate() error {
 	return nil
 }
+func (this *UpdateGalleryInfoRequest) Validate() error {
+	return nil
+}
+func (this *UpdateGalleryInfoResponse) Validate() error {
+	return nil
+}

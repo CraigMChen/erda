@@ -63,6 +63,8 @@ var _ urlenc.URLValuesUnmarshaler = (*ReleasesDeleteResponse)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*CheckVersionRequest)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*CheckVersionResponse)(nil)
 var _ urlenc.URLValuesUnmarshaler = (*CheckVersionResponseData)(nil)
+var _ urlenc.URLValuesUnmarshaler = (*UpdateGalleryInfoRequest)(nil)
+var _ urlenc.URLValuesUnmarshaler = (*UpdateGalleryInfoResponse)(nil)
 
 // ReleaseList implement urlenc.URLValuesUnmarshaler.
 func (m *ReleaseList) UnmarshalURLValues(prefix string, values url.Values) error {
@@ -270,6 +272,10 @@ func (m *ReleaseUpdateRequest) UnmarshalURLValues(prefix string, values url.Valu
 					return err
 				}
 				m.ApplicationID = val
+			case "opusID":
+				m.OpusID = vals[0]
+			case "opusVersionID":
+				m.OpusVersionID = vals[0]
 			}
 		}
 	}
@@ -618,6 +624,16 @@ func (m *ReleaseGetResponse) UnmarshalURLValues(prefix string, values url.Values
 					m.Data = &ReleaseGetResponseData{}
 				}
 				m.Data.AddonYaml = vals[0]
+			case "data.opusID":
+				if m.Data == nil {
+					m.Data = &ReleaseGetResponseData{}
+				}
+				m.Data.OpusID = vals[0]
+			case "data.opusVersionID":
+				if m.Data == nil {
+					m.Data = &ReleaseGetResponseData{}
+				}
+				m.Data.OpusVersionID = vals[0]
 			case "userIDs":
 				m.UserIDs = vals
 			}
@@ -854,6 +870,10 @@ func (m *ReleaseGetResponseData) UnmarshalURLValues(prefix string, values url.Va
 				m.IsLatest = val
 			case "addonYaml":
 				m.AddonYaml = vals[0]
+			case "opusID":
+				m.OpusID = vals[0]
+			case "opusVersionID":
+				m.OpusVersionID = vals[0]
 			}
 		}
 	}
@@ -1218,6 +1238,10 @@ func (m *ReleaseData) UnmarshalURLValues(prefix string, values url.Values) error
 					return err
 				}
 				m.IsLatest = val
+			case "opusID":
+				m.OpusID = vals[0]
+			case "opusVersionID":
+				m.OpusVersionID = vals[0]
 			}
 		}
 	}
@@ -1377,6 +1401,10 @@ func (m *GetLatestReleasesResponseData) UnmarshalURLValues(prefix string, values
 					return err
 				}
 				m.UpdatedAt.Nanos = int32(val)
+			case "opusID":
+				m.OpusID = vals[0]
+			case "opusVersionID":
+				m.OpusVersionID = vals[0]
 			}
 		}
 	}
@@ -1672,5 +1700,27 @@ func (m *CheckVersionResponseData) UnmarshalURLValues(prefix string, values url.
 			}
 		}
 	}
+	return nil
+}
+
+// UpdateGalleryInfoRequest implement urlenc.URLValuesUnmarshaler.
+func (m *UpdateGalleryInfoRequest) UnmarshalURLValues(prefix string, values url.Values) error {
+	for key, vals := range values {
+		if len(vals) > 0 {
+			switch prefix + key {
+			case "releaseID":
+				m.ReleaseID = vals[0]
+			case "OpusID":
+				m.OpusID = vals[0]
+			case "OpusVersionID":
+				m.OpusVersionID = vals[0]
+			}
+		}
+	}
+	return nil
+}
+
+// UpdateGalleryInfoResponse implement urlenc.URLValuesUnmarshaler.
+func (m *UpdateGalleryInfoResponse) UnmarshalURLValues(prefix string, values url.Values) error {
 	return nil
 }

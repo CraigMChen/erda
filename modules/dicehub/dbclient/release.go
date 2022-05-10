@@ -81,6 +81,10 @@ type Release struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 	// IsLatest 是否为分支最新
 	IsLatest bool `json:"isLatest"`
+	// OpusID 应用市场 Opus ID
+	OpusID string `json:"opusID"`
+	// OpusVersionID 应用市场 Opus 版本 ID
+	OpusVersionID string `json:"opusVersionID"`
 }
 
 // Set table name

@@ -37,6 +37,7 @@ type ReleaseServiceClient interface {
 	ToFormalReleases(ctx context.Context, in *FormalReleasesRequest, opts ...grpc.CallOption) (*FormalReleasesResponse, error)
 	DeleteReleases(ctx context.Context, in *ReleasesDeleteRequest, opts ...grpc.CallOption) (*ReleasesDeleteResponse, error)
 	CheckVersion(ctx context.Context, in *CheckVersionRequest, opts ...grpc.CallOption) (*CheckVersionResponse, error)
+	UpdateGalleryInfo(ctx context.Context, in *UpdateGalleryInfoRequest, opts ...grpc.CallOption) (*UpdateGalleryInfoResponse, error)
 }
 
 type releaseServiceClient struct {
@@ -191,6 +192,15 @@ func (c *releaseServiceClient) CheckVersion(ctx context.Context, in *CheckVersio
 	return out, nil
 }
 
+func (c *releaseServiceClient) UpdateGalleryInfo(ctx context.Context, in *UpdateGalleryInfoRequest, opts ...grpc.CallOption) (*UpdateGalleryInfoResponse, error) {
+	out := new(UpdateGalleryInfoResponse)
+	err := c.cc.Invoke(ctx, "/erda.core.dicehub.release.ReleaseService/UpdateGalleryInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReleaseServiceServer is the server API for ReleaseService service.
 // All implementations should embed UnimplementedReleaseServiceServer
 // for forward compatibility
@@ -211,6 +221,7 @@ type ReleaseServiceServer interface {
 	ToFormalReleases(context.Context, *FormalReleasesRequest) (*FormalReleasesResponse, error)
 	DeleteReleases(context.Context, *ReleasesDeleteRequest) (*ReleasesDeleteResponse, error)
 	CheckVersion(context.Context, *CheckVersionRequest) (*CheckVersionResponse, error)
+	UpdateGalleryInfo(context.Context, *UpdateGalleryInfoRequest) (*UpdateGalleryInfoResponse, error)
 }
 
 // UnimplementedReleaseServiceServer should be embedded to have forward compatible implementations.
@@ -264,6 +275,9 @@ func (*UnimplementedReleaseServiceServer) DeleteReleases(context.Context, *Relea
 }
 func (*UnimplementedReleaseServiceServer) CheckVersion(context.Context, *CheckVersionRequest) (*CheckVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckVersion not implemented")
+}
+func (*UnimplementedReleaseServiceServer) UpdateGalleryInfo(context.Context, *UpdateGalleryInfoRequest) (*UpdateGalleryInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGalleryInfo not implemented")
 }
 
 func RegisterReleaseServiceServer(s grpc1.ServiceRegistrar, srv ReleaseServiceServer, opts ...grpc1.HandleOption) {
@@ -426,6 +440,15 @@ func _get_ReleaseService_serviceDesc(srv ReleaseServiceServer, opts ...grpc1.Han
 	if h.Interceptor != nil {
 		_ReleaseService_CheckVersion_info = transport.NewServiceInfo("erda.core.dicehub.release.ReleaseService", "CheckVersion", srv)
 		_ReleaseService_CheckVersion_Handler = h.Interceptor(_ReleaseService_CheckVersion_Handler)
+	}
+
+	_ReleaseService_UpdateGalleryInfo_Handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.UpdateGalleryInfo(ctx, req.(*UpdateGalleryInfoRequest))
+	}
+	var _ReleaseService_UpdateGalleryInfo_info transport.ServiceInfo
+	if h.Interceptor != nil {
+		_ReleaseService_UpdateGalleryInfo_info = transport.NewServiceInfo("erda.core.dicehub.release.ReleaseService", "UpdateGalleryInfo", srv)
+		_ReleaseService_UpdateGalleryInfo_Handler = h.Interceptor(_ReleaseService_UpdateGalleryInfo_Handler)
 	}
 
 	var serviceDesc = _ReleaseService_serviceDesc
@@ -796,6 +819,29 @@ func _get_ReleaseService_serviceDesc(srv ReleaseServiceServer, opts ...grpc1.Han
 					FullMethod: "/erda.core.dicehub.release.ReleaseService/CheckVersion",
 				}
 				return interceptor(ctx, in, info, _ReleaseService_CheckVersion_Handler)
+			},
+		},
+		{
+			MethodName: "UpdateGalleryInfo",
+			Handler: func(_ interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+				in := new(UpdateGalleryInfoRequest)
+				if err := dec(in); err != nil {
+					return nil, err
+				}
+				if interceptor == nil && h.Interceptor == nil {
+					return srv.(ReleaseServiceServer).UpdateGalleryInfo(ctx, in)
+				}
+				if h.Interceptor != nil {
+					ctx = context.WithValue(ctx, transport.ServiceInfoContextKey, _ReleaseService_UpdateGalleryInfo_info)
+				}
+				if interceptor == nil {
+					return _ReleaseService_UpdateGalleryInfo_Handler(ctx, in)
+				}
+				info := &grpc.UnaryServerInfo{
+					Server:     srv,
+					FullMethod: "/erda.core.dicehub.release.ReleaseService/UpdateGalleryInfo",
+				}
+				return interceptor(ctx, in, info, _ReleaseService_UpdateGalleryInfo_Handler)
 			},
 		},
 	}

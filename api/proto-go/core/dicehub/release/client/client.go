@@ -121,3 +121,7 @@ func (s *releaseServiceWrapper) DeleteReleases(ctx context.Context, req *pb.Rele
 func (s *releaseServiceWrapper) CheckVersion(ctx context.Context, req *pb.CheckVersionRequest) (*pb.CheckVersionResponse, error) {
 	return s.client.CheckVersion(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }
+
+func (s *releaseServiceWrapper) UpdateGalleryInfo(ctx context.Context, req *pb.UpdateGalleryInfoRequest) (*pb.UpdateGalleryInfoResponse, error) {
+	return s.client.UpdateGalleryInfo(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
+}

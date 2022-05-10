@@ -113,6 +113,10 @@ var _ json.Marshaler = (*CheckVersionResponse)(nil)
 var _ json.Unmarshaler = (*CheckVersionResponse)(nil)
 var _ json.Marshaler = (*CheckVersionResponseData)(nil)
 var _ json.Unmarshaler = (*CheckVersionResponseData)(nil)
+var _ json.Marshaler = (*UpdateGalleryInfoRequest)(nil)
+var _ json.Unmarshaler = (*UpdateGalleryInfoRequest)(nil)
+var _ json.Marshaler = (*UpdateGalleryInfoResponse)(nil)
+var _ json.Unmarshaler = (*UpdateGalleryInfoResponse)(nil)
 
 // ReleaseList implement json.Marshaler.
 func (m *ReleaseList) MarshalJSON() ([]byte, error) {
@@ -1009,6 +1013,42 @@ func (m *CheckVersionResponseData) MarshalJSON() ([]byte, error) {
 
 // CheckVersionResponseData implement json.Marshaler.
 func (m *CheckVersionResponseData) UnmarshalJSON(b []byte) error {
+	return (&protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}).Unmarshal(b, m)
+}
+
+// UpdateGalleryInfoRequest implement json.Marshaler.
+func (m *UpdateGalleryInfoRequest) MarshalJSON() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := (&jsonpb.Marshaler{
+		OrigName:     false,
+		EnumsAsInts:  false,
+		EmitDefaults: true,
+	}).Marshal(buf, m)
+	return buf.Bytes(), err
+}
+
+// UpdateGalleryInfoRequest implement json.Marshaler.
+func (m *UpdateGalleryInfoRequest) UnmarshalJSON(b []byte) error {
+	return (&protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}).Unmarshal(b, m)
+}
+
+// UpdateGalleryInfoResponse implement json.Marshaler.
+func (m *UpdateGalleryInfoResponse) MarshalJSON() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := (&jsonpb.Marshaler{
+		OrigName:     false,
+		EnumsAsInts:  false,
+		EmitDefaults: true,
+	}).Marshal(buf, m)
+	return buf.Bytes(), err
+}
+
+// UpdateGalleryInfoResponse implement json.Marshaler.
+func (m *UpdateGalleryInfoResponse) UnmarshalJSON(b []byte) error {
 	return (&protojson.UnmarshalOptions{
 		DiscardUnknown: true,
 	}).Unmarshal(b, m)

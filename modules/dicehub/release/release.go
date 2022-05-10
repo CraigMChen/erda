@@ -762,6 +762,8 @@ func convertToListReleaseResponse(release *db.Release, tagIDs []uint64, tagsMap 
 		CreatedAt:        timestamppb.New(release.CreatedAt),
 		UpdatedAt:        timestamppb.New(release.UpdatedAt),
 		IsLatest:         release.IsLatest,
+		OpusID:           release.OpusID,
+		OpusVersionID:    release.OpusVersionID,
 	}
 	return respData, nil
 }

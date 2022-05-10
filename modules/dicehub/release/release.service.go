@@ -873,6 +873,47 @@ func (s *ReleaseService) CheckVersion(ctx context.Context, req *pb.CheckVersionR
 	}, nil
 }
 
+func (s *ReleaseService) UpdateGalleryInfo(ctx context.Context, req *pb.UpdateGalleryInfoRequest) (*pb.UpdateGalleryInfoResponse, error) {
+	_, err := getPermissionHeader(ctx)
+	if err != nil {
+		return nil, apierrors.ErrUpdateRelease.NotLogin()
+	}
+
+	// Check releaseId if exist in path or not
+	releaseID := req.ReleaseID
+	if releaseID == "" {
+		return nil, apierrors.ErrUpdateRelease.MissingParameter("releaseId")
+	}
+
+	identityInfo, err := getIdentityInfo(ctx)
+	if err != nil {
+		return nil, apierrors.ErrUpdateRelease.NotLogin()
+	}
+	release, err := s.db.GetRelease(releaseID)
+	if err != nil {
+		logrus.Errorf("failed to get release %s, %v", releaseID, err)
+		return nil, apierrors.ErrUpdateRelease.InternalError(err)
+	}
+	if !identityInfo.IsInternalClient() {
+		hasAccess, err := s.hasWriteAccess(identityInfo, release.ProjectID, release.IsProjectRelease, release.ApplicationID)
+		if err != nil {
+			return nil, apierrors.ErrUpdateRelease.InternalError(err)
+		}
+		if !hasAccess {
+			return nil, apierrors.ErrUpdateRelease.AccessDenied()
+		}
+	}
+	logrus.Infof("update release info: %+v", req)
+
+	release.OpusID = req.OpusID
+	release.OpusVersionID = req.OpusVersionID
+
+	if err := s.db.UpdateRelease(release); err != nil {
+		return nil, apierrors.ErrUpdateRelease.InternalError(err)
+	}
+	return &pb.UpdateGalleryInfoResponse{}, nil
+}
+
 // GetDiceYAML get dice.yml context
 func (s *ReleaseService) GetDiceYAML(orgID int64, releaseID string) (string, error) {
 	release, err := s.db.GetRelease(releaseID)
@@ -1314,6 +1355,8 @@ func (s *ReleaseService) convertToReleaseResponse(release *db.Release) (*pb.Rele
 		IsLatest:         release.IsLatest,
 		Addons:           addons,
 		AddonYaml:        addonYaml,
+		OpusID:           release.OpusID,
+		OpusVersionID:    release.OpusVersionID,
 	}
 
 	if err = respDataReLoadImages(respData); err != nil {
