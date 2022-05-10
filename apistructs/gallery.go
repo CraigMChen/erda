@@ -24,15 +24,15 @@ const (
 	OpusTypeArtifactsProject OpusType = "erda/artifacts/project"
 
 	OpusLevelSystem OpusLevel = "sys"
-	OpusLevelOrg    OpusLevel = "sys"
+	OpusLevelOrg    OpusLevel = "org"
 
 	PutOnOpusModeAppend   PutOnOpusMode = "append"
 	PutOnOpusModeOverride PutOnOpusMode = "override"
 
-	LangUnkown      = "unknown"
-	LangEn          = "en"
+	LangUnkown Lang = "unknown"
+	LangEn     Lang = "en"
 	LangEnUs   Lang = "en_us"
-	LangZh          = "zh"
+	LangZh     Lang = "zh"
 	LangZhCn   Lang = "zh_cn"
 )
 

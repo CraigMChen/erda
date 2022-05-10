@@ -78,6 +78,7 @@ func (p *provider) Init(ctx servicehub.Context) error {
 		p.l.Infoln("register self")
 		pb.RegisterGalleryImp(p.R, p, apis.Options())
 	}
+	p.D = p.D.Debug()
 	return nil
 }
 
