@@ -147,3 +147,11 @@ func (s *releaseServiceWrapper) DeleteReleases(ctx context.Context, req *pb.Rele
 func (s *releaseServiceWrapper) CheckVersion(ctx context.Context, req *pb.CheckVersionRequest) (*pb.CheckVersionResponse, error) {
 	return s.client.CheckVersion(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
 }
+
+func (s *releaseServiceWrapper) PutOnRelease(ctx context.Context, req *pb.ReleasePutOnRequest) (*pb.ReleasePutOnResponse, error) {
+	return s.client.PutOnRelease(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
+}
+
+func (s *releaseServiceWrapper) PutOffRelease(ctx context.Context, req *pb.ReleasePutOffRequest) (*pb.ReleasePutOffResponse, error) {
+	return s.client.PutOffRelease(ctx, req, append(grpc.CallOptionFromContext(ctx), s.opts...)...)
+}
