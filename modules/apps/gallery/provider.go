@@ -17,6 +17,7 @@ package gallery
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -146,10 +147,11 @@ func (p *provider) ListOpus(ctx context.Context, req *pb.ListOpusReq) (*pb.ListO
 func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersionsReq) (*pb.ListOpusVersionsResp, error) {
 	var l = p.l.WithField("func", "listOpusVersions").WithField("opusID", req.GetOpusID())
 
-	orgID := apis.GetOrgID(ctx)
-	if orgID == "" {
+	orgID, err := apis.GetIntOrgID(ctx)
+	if err != nil {
 		return nil, apierr.ListOpus.InvalidParameter("invalid orgID")
 	}
+
 	lang := apis.GetLang(ctx)
 	lang = strings.ToLower(lang)
 	lang = strings.ReplaceAll(lang, "-", "_")
@@ -216,7 +218,7 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 		Id:               opus.ID.String,
 		CreatedAt:        timestamppb.New(opus.CreatedAt),
 		UpdatedAt:        timestamppb.New(opus.UpdatedAt),
-		OrgID:            orgID,
+		OrgID:            uint32(orgID),
 		OrgName:          opus.OrgName,
 		CreatorID:        opus.CreatorID,
 		UpdaterID:        opus.UpdaterID,
@@ -284,16 +286,9 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		WithField("version", req.GetVersion())
 
 	// check parameters and get org info and user info
-	var orgID = apis.GetOrgID(ctx)
-	if orgID == "" {
-		orgID = req.GetOrgID()
-	}
-	if orgID == "" {
-		return nil, apierr.PutOnArtifacts.InvalidParameter("missing orgID")
-	}
-	orgIDInt, err := strconv.ParseUint(orgID, 10, 32)
+	var orgID, err = apis.GetIntOrgID(ctx)
 	if err != nil {
-		return nil, apierr.PutOnArtifacts.InvalidParameter("invalid orgID: " + orgID)
+		orgID = int64(req.GetOrgID())
 	}
 	var userID = apis.GetUserID(ctx)
 	if userID == "" {
@@ -302,9 +297,9 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 	if userID == "" {
 		return nil, apierr.PutOnArtifacts.InvalidParameter("missing userID")
 	}
-	orgDto, ok := p.C.GetOrgByOrgID(orgID)
+	orgDto, ok := p.C.GetOrgByOrgID(strconv.FormatInt(orgID, 10))
 	if !ok {
-		return nil, apierr.PutOnArtifacts.InvalidParameter("invalid orgID: " + orgID)
+		return nil, apierr.PutOnArtifacts.InvalidParameter(fmt.Sprintf("invalid orgID: %s", orgID))
 	}
 	if req.GetName() == "" {
 		return nil, apierr.PutOnArtifacts.InvalidParameter("missing Opus name")
@@ -320,7 +315,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		opus     model.Opus
 		versions []*model.OpusVersion
 		common   = model.Common{
-			OrgID:     uint32(orgIDInt),
+			OrgID:     uint32(orgID),
 			OrgName:   orgDto.Name,
 			CreatorID: userID,
 			UpdaterID: userID,
@@ -472,13 +467,6 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		WithField("version_id", req.GetVersionID())
 
 	// check parameters and get org info and user info
-	var orgID = apis.GetOrgID(ctx)
-	if orgID == "" {
-		orgID = req.GetOrgID()
-	}
-	if orgID == "" {
-		return nil, apierr.PutOffArtifacts.InvalidParameter("missing orgID")
-	}
 	var userID = apis.GetUserID(ctx)
 	if userID == "" {
 		userID = req.GetUserID()
@@ -554,11 +542,11 @@ func (p *provider) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsR
 		})
 
 	// check parameters and get org info and user info
-	var orgID = apis.GetOrgID(ctx)
-	if orgID == "" {
-		orgID = req.GetOrgID()
+	var orgID, err = apis.GetIntOrgID(ctx)
+	if err != nil {
+		orgID = int64(req.GetOrgID())
 	}
-	if orgID == "" && apistructs.OpusLevelOrg.Equal(req.GetLevel()) {
+	if orgID == 0 && apistructs.OpusLevelOrg.Equal(req.GetLevel()) {
 		return nil, apierr.PutOnExtension.InvalidState("missing orgID")
 	}
 	var userID = apis.GetUserID(ctx)
@@ -663,7 +651,7 @@ func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opuses
 			Id:          opus.ID.String,
 			CreatedAt:   timestamppb.New(opus.CreatedAt),
 			UpdatedAt:   timestamppb.New(opus.UpdatedAt),
-			OrgID:       strconv.FormatUint(uint64(opus.OrgID), 10),
+			OrgID:       opus.OrgID,
 			OrgName:     opus.OrgName,
 			CreatorID:   opus.CreatorID,
 			UpdaterID:   opus.UpdaterID,
