@@ -477,19 +477,23 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 	tx := dao.Begin(p.D, true)
 	defer tx.CommitOrRollback()
 
-	if err = tx.Delete(new(model.OpusVersion), dao.ByIDOption(req.GetVersionID())).Error(); err != nil {
+	tx = tx.Delete(new(model.OpusVersion), dao.ByIDOption(req.GetVersionID()))
+	if err = tx.Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete version")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(new(model.OpusPresentation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
+	tx = tx.Delete(new(model.OpusPresentation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
+	if err = tx.Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete presentation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(new(model.OpusReadme), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
+	tx = tx.Delete(new(model.OpusReadme), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
+	if err = tx.Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete readme")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(new(model.OpusInstallation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
+	tx = tx.Delete(new(model.OpusInstallation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
+	if err = tx.Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete installation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
@@ -499,7 +503,8 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
 	if total == 0 {
-		if err = tx.Delete(new(model.Opus), dao.ByIDOption(req.GetOpusID())).Error(); err != nil {
+		tx = tx.Delete(new(model.Opus), dao.ByIDOption(req.GetOpusID()))
+		if err = tx.Error(); err != nil {
 			l.WithError(err).Errorln("failed to Delete opus")
 			return nil, apierr.PutOffArtifacts.InternalError(err)
 		}
