@@ -40,7 +40,7 @@ zh:
   putOn: 上架应用市场
   putOff: 从应用市场下架
   putOnSucceeded: 上架成功
-  pufOffSucceeded: 下架成功
+  putOffSucceeded: 下架成功
   canNotDeletePutOnRelease: 不能删除已上架的制品
 en:
   searchByVersionOrID: Search by version or releaseID
