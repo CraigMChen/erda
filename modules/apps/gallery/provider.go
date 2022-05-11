@@ -311,8 +311,14 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		UpdaterID: userID,
 	}
 
-	tx := dao.Begin(p.D, true)
-	defer tx.CommitOrRollback()
+	tx := p.D.Begin()
+	defer func() {
+		if err == nil {
+			tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
 
 	// get the opus by options, if the opus does not exist, create it
 	opus, ok, err := dao.GetOpus(p.D, dao.MapOption(map[string]interface{}{
@@ -333,7 +339,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 			DisplayName: req.GetDisplayName(),
 			Catalog:     req.GetCatalog(),
 		}
-		if err := tx.Create(opus).Error(); err != nil {
+		if err := tx.Create(opus).Error; err != nil {
 			l.WithError(err).Errorln("failed to Create opus")
 			return nil, apierr.PutOnArtifacts.InternalError(err)
 		}
@@ -365,7 +371,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		LogoURL: req.GetLogoURL(),
 		IsValid: true,
 	}
-	if err := tx.Create(&version).Error(); err != nil {
+	if err := tx.Create(&version).Error; err != nil {
 		l.WithError(err).Errorln("failed to Create version")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -389,7 +395,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		IsDownloadable:  req.GetIsDownloadable(),
 		DownloadURL:     req.GetDownloadURL(),
 	}
-	if err := tx.Create(&presentation).Error(); err != nil {
+	if err := tx.Create(&presentation).Error; err != nil {
 		l.WithError(err).Errorln("failed to Create presentation")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -408,7 +414,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		}
 		readmes = append(readmes, readme)
 	}
-	if err = tx.CreateInBatches(readmes, len(readmes)).Error(); err != nil {
+	if err = tx.CreateInBatches(readmes, len(readmes)).Error; err != nil {
 		l.WithError(err).Errorln("failed to CreateInBatches readmes")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -426,17 +432,20 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		Installer: string(apistructs.OpusTypeArtifactsProject),
 		Spec:      string(spec),
 	}
-	if err = tx.Create(&installation).Error(); err != nil {
+	if err = tx.Create(&installation).Error; err != nil {
 		l.WithError(err).Errorln("failed to Create installation")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
 
 	// update opus
-	if err = tx.Updates(&opus, map[string]interface{}{
-		"updater_id":         userID,
-		"default_version_id": version.ID,
-		"latest_version_id":  version.ID,
-	}, dao.ByIDOption(opus.ID)).Error(); err != nil {
+	if err = tx.Where("id = ?", opus.ID).
+		Model(&opus).
+		Updates(map[string]interface{}{
+			"updater_id":         userID,
+			"default_version_id": version.ID,
+			"latest_version_id":  version.ID,
+		}).
+		Error; err != nil {
 		l.WithError(err).Errorln("failed to Updates opus")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -474,26 +483,28 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		return nil, apierr.PutOffArtifacts.InvalidParameter("invalid opusID and versionID")
 	}
 
-	tx := dao.Begin(p.D, true)
-	defer tx.CommitOrRollback()
+	tx := p.D.Begin()
+	defer func() {
+		if err == nil {
+			tx.Commit()
+		} else {
+			tx.Rollback()
+		}
+	}()
 
-	tx = tx.Delete(new(model.OpusVersion), dao.ByIDOption(req.GetVersionID()))
-	if err = tx.Error(); err != nil {
+	if err = tx.Delete(new(model.OpusVersion), map[string]interface{}{"id": req.GetVersionID()}).Error; err != nil {
 		l.WithError(err).Errorln("failed to Delete version")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	tx = tx.Delete(new(model.OpusPresentation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
-	if err = tx.Error(); err != nil {
+	if err = tx.Delete(new(model.OpusPresentation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
 		l.WithError(err).Errorln("failed to Delete presentation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	tx = tx.Delete(new(model.OpusReadme), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
-	if err = tx.Error(); err != nil {
+	if err = tx.Delete(new(model.OpusReadme), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
 		l.WithError(err).Errorln("failed to Delete readme")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	tx = tx.Delete(new(model.OpusInstallation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()}))
-	if err = tx.Error(); err != nil {
+	if err = tx.Delete(new(model.OpusInstallation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
 		l.WithError(err).Errorln("failed to Delete installation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
@@ -503,8 +514,7 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
 	if total == 0 {
-		tx = tx.Delete(new(model.Opus), dao.ByIDOption(req.GetOpusID()))
-		if err = tx.Error(); err != nil {
+		if err = tx.Delete(new(model.Opus), map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
 			l.WithError(err).Errorln("failed to Delete opus")
 			return nil, apierr.PutOffArtifacts.InternalError(err)
 		}
