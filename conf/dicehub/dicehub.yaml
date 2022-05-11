@@ -33,6 +33,12 @@ mysql:
   username: "${MYSQL_USERNAME:root}"
   password: "${MYSQL_PASSWORD:123456}"
   database: "${MYSQL_DATABASE:dice}"
+gorm.v2:
+  host: "${MYSQL_HOST}"
+  port: "${MYSQL_PORT}"
+  username: "${MYSQL_USERNAME}"
+  password: "${MYSQL_PASSWORD}"
+  database: "${MYSQL_DATABASE}"
 
 etcd-election@initExtension:
   root_path: erda/component-leader/dicehub/init_extension
