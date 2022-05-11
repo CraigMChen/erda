@@ -15,7 +15,6 @@
 package dao
 
 import (
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
 	"github.com/erda-project/erda/modules/apps/gallery/model"
@@ -53,75 +52,57 @@ func PageOption(pageSize, pageNo int) Option {
 	}
 }
 
-func ListOpuses(db *gorm.DB, options ...Option) (int64, []*model.Opus, error) {
+func ListOpuses(tx *TX, options ...Option) (int64, []*model.Opus, error) {
 	var l []*model.Opus
-	total, err := list(db, &l, options...)
+	total, err := tx.List(&l, options...)
 	return total, l, err
 }
 
-func ListVersions(db *gorm.DB, options ...Option) (int64, []*model.OpusVersion, error) {
+func ListVersions(tx *TX, options ...Option) (int64, []*model.OpusVersion, error) {
 	var l []*model.OpusVersion
-	total, err := list(db, &l, options...)
+	total, err := tx.List(&l, options...)
 	return total, l, err
 }
 
-func ListPresentations(db *gorm.DB, options ...Option) (int64, []*model.OpusPresentation, error) {
+func ListPresentations(tx *TX, options ...Option) (int64, []*model.OpusPresentation, error) {
 	var l []*model.OpusPresentation
-	total, err := list(db, &l, options...)
+	total, err := tx.List(&l, options...)
 	return total, l, err
 }
 
-func ListReadmes(db *gorm.DB, options ...Option) (int64, []*model.OpusReadme, error) {
+func ListReadmes(tx *TX, options ...Option) (int64, []*model.OpusReadme, error) {
 	var l []*model.OpusReadme
-	total, err := list(db, &l, options...)
+	total, err := tx.List(&l, options...)
 	return total, l, err
 }
 
-func GetOpusByID(db *gorm.DB, id string) (*model.Opus, bool, error) {
-	return GetOpus(db, ByIDOption(id))
+func GetOpusByID(tx *TX, id string) (*model.Opus, bool, error) {
+	return GetOpus(tx, ByIDOption(id))
 }
 
-func GetOpus(db *gorm.DB, options ...Option) (*model.Opus, bool, error) {
+func GetOpus(tx *TX, options ...Option) (*model.Opus, bool, error) {
 	var opus model.Opus
-	ok, err := get(db, &opus, options...)
+	ok, err := tx.Get(&opus, options...)
 	if !ok {
 		return nil, false, err
 	}
 	return &opus, true, nil
 }
 
-func GetOpusVersion(db *gorm.DB, option ...Option) (*model.OpusVersion, bool, error) {
+func GetOpusVersion(tx *TX, option ...Option) (*model.OpusVersion, bool, error) {
 	var version model.OpusVersion
-	ok, err := get(db, &version, option...)
+	ok, err := tx.Get(&version, option...)
 	if !ok {
 		return nil, false, err
 	}
 	return &version, true, nil
 }
 
-func list(db *gorm.DB, i interface{}, options ...Option) (int64, error) {
-	for _, opt := range options {
-		db = opt(db)
+func GetReadme(tx *TX, option ...Option) (*model.OpusReadme, bool, error) {
+	var readme model.OpusReadme
+	ok, err := tx.Get(&readme, option...)
+	if !ok {
+		return nil, false, err
 	}
-	var total int64
-	if err := db.Find(i).Count(&total).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return total, nil
-}
-
-func get(db *gorm.DB, i interface{}, options ...Option) (bool, error) {
-	for _, opt := range options {
-		db = opt(db)
-	}
-	if err := db.First(i).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
+	return &readme, true, nil
 }

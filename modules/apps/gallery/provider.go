@@ -81,6 +81,7 @@ func (p *provider) Init(ctx servicehub.Context) error {
 		pb.RegisterGalleryImp(p.R, p, apis.Options())
 	}
 	p.D = p.D.Debug()
+	dao.SetSingleton(p.D)
 	return nil
 }
 
@@ -122,7 +123,7 @@ func (p *provider) ListOpus(ctx context.Context, req *pb.ListOpusReq) (*pb.ListO
 		options = append(options, dao.WhereOption("name = ?", req.GetName()))
 	}
 	options = append(options, dao.WhereOption("org_id = ? OR level = ?", orgID, apistructs.OpusLevelSystem))
-	total, opuses, err := dao.ListOpuses(p.D, options...)
+	total, opuses, err := dao.ListOpuses(dao.Q(), options...)
 	if err != nil {
 		l.WithError(err).Errorln("failed to Find opuses")
 		return nil, apierr.ListOpus.InternalError(err)
@@ -157,7 +158,7 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 	// todo: 鉴权
 
 	// query opus
-	opus, ok, err := dao.GetOpusByID(p.D, req.GetOpusID())
+	opus, ok, err := dao.GetOpusByID(dao.Q(), req.GetOpusID())
 	if err != nil {
 		l.WithError(err).Errorln("failed to GetOpusByID")
 		return nil, apierr.ListOpusVersions.InternalError(err)
@@ -167,7 +168,7 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 	}
 
 	// query versions
-	total, versions, err := dao.ListVersions(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	total, versions, err := dao.ListVersions(dao.Q(), dao.WhereOption("opus_id = ?", req.GetOpusID()))
 	if err != nil {
 		l.WithError(err).Errorln("failed to Find versions")
 		return nil, apierr.ListOpusVersions.InternalError(err)
@@ -178,14 +179,14 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 	}
 
 	// query presentations
-	_, presentations, err := dao.ListPresentations(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	_, presentations, err := dao.ListPresentations(dao.Q(), dao.WhereOption("opus_id = ?", req.GetOpusID()))
 	if err != nil {
 		l.WithError(err).Errorln("failed to Find presentations")
 		return nil, apierr.ListOpusVersions.InternalError(err)
 	}
 
 	// query readmes
-	_, readmes, err := dao.ListReadmes(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	_, readmes, err := dao.ListReadmes(dao.Q(), dao.WhereOption("opus_id = ?", req.GetOpusID()))
 	if err != nil {
 		l.WithError(err).Errorln("failed to Find readmes")
 		return nil, apierr.ListOpusVersions.InternalError(err)
@@ -321,7 +322,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 	}()
 
 	// get the opus by options, if the opus does not exist, create it
-	opus, ok, err := dao.GetOpus(p.D, dao.MapOption(map[string]interface{}{
+	opus, ok, err := dao.GetOpus(dao.Q(), dao.MapOption(map[string]interface{}{
 		"org_id": orgID,
 		"type":   apistructs.OpusTypeArtifactsProject,
 		"name":   req.GetName(),
@@ -346,7 +347,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 	}
 
 	// get the version by options, if the version exist, return 'already exists' or else create it
-	_, ok, err = dao.GetOpusVersion(p.D, dao.MapOption(map[string]interface{}{
+	_, ok, err = dao.GetOpusVersion(dao.Q(), dao.MapOption(map[string]interface{}{
 		"opus_id": opus.ID,
 		"version": req.GetVersion(),
 	}))
@@ -471,7 +472,7 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 
 	// query version
 	var byIDOption = dao.ByIDOption(req.GetVersionID())
-	version, ok, err := dao.GetOpusVersion(p.D, byIDOption)
+	version, ok, err := dao.GetOpusVersion(dao.Q(), byIDOption)
 	if err != nil {
 		l.WithError(err).Errorln("failed to GetOpusVersion")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
@@ -484,20 +485,10 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		return nil, apierr.PutOffArtifacts.InvalidParameter("invalid opusID and versionID")
 	}
 
-	tx := dao.Begin(p.D)
+	tx := dao.Begin()
 	defer tx.CommitOrRollback()
-	//tx := p.D.Begin()
-	//defer func() {
-	//	if err == nil {
-	//		l.Infoln("tx.Commit")
-	//		tx.Commit()
-	//	} else {
-	//		l.Infoln("tx.Rollback")
-	//		tx.Rollback()
-	//	}
-	//}()
 
-	total, _, err := dao.ListVersions(p.D, dao.MapOption(map[string]interface{}{"opus_id": req.GetOpusID()}))
+	total, _, err := dao.ListVersions(tx, dao.MapOption(map[string]interface{}{"opus_id": req.GetOpusID()}))
 	if err != nil {
 		l.WithError(err).Errorln("failed to ListVersions")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
@@ -525,28 +516,6 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 			return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
 		}
 	}
-	//if err = tx.Delete(new(model.OpusVersion), map[string]interface{}{"id": req.GetVersionID()}).Error; err != nil {
-	//	l.WithError(err).Errorln("failed to Delete version")
-	//	return nil, apierr.PutOffArtifacts.InternalError(err)
-	//}
-	//if err = tx.Delete(new(model.OpusPresentation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-	//	l.WithError(err).Errorln("failed to Delete presentation")
-	//	return nil, apierr.PutOffArtifacts.InternalError(err)
-	//}
-	//if err = tx.Delete(new(model.OpusReadme), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-	//	l.WithError(err).Errorln("failed to Delete readme")
-	//	return nil, apierr.PutOffArtifacts.InternalError(err)
-	//}
-	//if err = tx.Delete(new(model.OpusInstallation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-	//	l.WithError(err).Errorln("failed to Delete installation")
-	//	return nil, apierr.PutOffArtifacts.InternalError(err)
-	//}
-	//if total == 1 {
-	//	if err = tx.Delete(new(model.Opus), map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
-	//		l.WithError(err).Errorln("failed to Delete opus")
-	//		return nil, apierr.PutOffArtifacts.InternalError(err)
-	//	}
-	//}
 
 	return new(commonPb.VoidResponse), nil
 }
@@ -636,7 +605,8 @@ func (p *provider) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsR
 func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opusesIDs []string) (*pb.ListOpusResp, error) {
 	var l = p.l.WithField("func", "listOpusByIDs")
 
-	total, opuses, err := dao.ListOpuses(p.D,
+	total, opuses, err := dao.ListOpuses(
+		dao.Q(),
 		dao.PageOption(pageSize, pageNo),
 		dao.WhereOption("id IN (?)", opusesIDs),
 	)
@@ -648,7 +618,7 @@ func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opuses
 		return new(pb.ListOpusResp), nil
 	}
 
-	_, versions, err := dao.ListVersions(p.D, dao.WhereOption("opus_id IN (?)", opusesIDs))
+	_, versions, err := dao.ListVersions(dao.Q(), dao.WhereOption("opus_id IN (?)", opusesIDs))
 	if err != nil {
 		l.WithError(err).Errorln("failed to Find versions")
 		return nil, apierr.ListOpus.InternalError(err)
@@ -739,48 +709,38 @@ func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID 
 	l = l.WithField("func", "updateExtension")
 
 	var err error
-	tx := p.D.Begin()
-	defer func() {
-		if err == nil {
-			tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
+	tx := dao.Begin()
+	defer tx.CommitOrRollback()
 
 	// update version
 	labels, _ := json.Marshal(req.GetLabels())
-	if err = tx.Model(&version).
-		Where(map[string]interface{}{"id": version.ID}).
-		Updates(map[string]interface{}{
-			"summary":    req.GetSummary(),
-			"labels":     string(labels),
-			"logo_url":   req.GetLogoURL(),
-			"updater_id": userID,
-		}).Error; err != nil {
-		l.WithError(err).Errorln("failed to Updates")
-		return nil, apierr.PutOnExtension.InternalError(err)
+	if tx.Updates(&version, map[string]interface{}{
+		"summary":    req.GetSummary(),
+		"labels":     string(labels),
+		"logo_url":   req.GetLogoURL(),
+		"updater_id": userID,
+	}, dao.ByIDOption(version.ID)); tx.Error != nil {
+		l.WithError(tx.Error).Errorln("failed to Updates")
+		return nil, apierr.PutOnExtension.InternalError(tx.Error)
 	}
 
 	// update presentation
-	if err = tx.Model(new(model.OpusPresentation)).
-		Where(map[string]interface{}{"version_id": version.ID}).
-		Updates(map[string]interface{}{
-			"desc":              req.GetDesc(),
-			"contact_name":      req.GetContactName(),
-			"contact_url":       req.GetContactURL(),
-			"contact_email":     req.GetContactEmail(),
-			"is_open_sourced":   req.GetIsOpenSourced(),
-			"opensource_url":    req.GetOpensourceURL(),
-			"licence_name":      req.GetLicenseName(),
-			"license_url":       req.GetLicenseURL(),
-			"homepage_name":     req.GetHomepageName(),
-			"homepage_url":      req.GetHomepageURL(),
-			"homepage_logo_url": req.GetHomepageLogoURL(),
-			"is_downloadable":   req.GetIsDownloadable(),
-			"download_url":      req.GetDownloadURL(),
-			"updater_id":        userID,
-		}).Error; err != nil {
+	if tx.Updates(new(model.OpusPresentation), map[string]interface{}{
+		"desc":              req.GetDesc(),
+		"contact_name":      req.GetContactName(),
+		"contact_url":       req.GetContactURL(),
+		"contact_email":     req.GetContactEmail(),
+		"is_open_sourced":   req.GetIsOpenSourced(),
+		"opensource_url":    req.GetOpensourceURL(),
+		"licence_name":      req.GetLicenseName(),
+		"license_url":       req.GetLicenseURL(),
+		"homepage_name":     req.GetHomepageName(),
+		"homepage_url":      req.GetHomepageURL(),
+		"homepage_logo_url": req.GetHomepageLogoURL(),
+		"is_downloadable":   req.GetIsDownloadable(),
+		"download_url":      req.GetDownloadURL(),
+		"updater_id":        userID,
+	}, dao.WhereOption("version_id = ?", version.ID)); tx.Error != nil {
 		l.WithError(err).Errorln("failed to Updates presentation")
 		return nil, apierr.PutOnExtension.InternalError(err)
 	}
@@ -790,26 +750,27 @@ func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID 
 		if item.GetLang() == "" {
 			continue
 		}
-		var (
-			readme model.OpusReadme
-			where  = map[string]interface{}{
-				"version_id": version.ID,
-				"lang":       item.GetLang(),
-			}
-		)
-		switch err2 := p.D.Where(where).First(&readme).Error; {
-		case err2 == nil:
-			if err = tx.Model(new(model.OpusReadme)).
-				Where(where).
-				Updates(map[string]interface{}{
-					"lang_name": apistructs.LangTypes[apistructs.Lang(item.GetLang())],
-					"text":      item.GetText(),
-				}).Error; err != nil {
+		var where = map[string]interface{}{
+			"version_id": version.ID,
+			"lang":       item.GetLang(),
+		}
+		var option = dao.MapOption(where)
+		var updates = map[string]interface{}{
+			"lang_name": apistructs.LangTypes[apistructs.Lang(item.GetLang())],
+			"text":      item.GetText(),
+		}
+		_, ok, err := dao.GetReadme(tx, option)
+		if err != nil {
+			l.WithError(err).WithFields(where).Errorln("failed to First readme")
+			return nil, apierr.PutOnExtension.InternalError(err)
+		}
+		if ok {
+			if tx.Updates(new(model.OpusReadme), updates, option); tx.Error != nil {
 				l.WithError(err).WithField("lang", item.GetLang()).Errorln("failed to Updates readme")
 				return nil, apierr.PutOnExtension.InternalError(err)
 			}
-		case errors.Is(err2, gorm.ErrRecordNotFound):
-			if err = tx.Create(model.OpusReadme{
+		} else {
+			if tx.Create(&model.OpusReadme{
 				Common: model.Common{
 					OrgID:     opus.OrgID,
 					OrgName:   opus.OrgName,
@@ -821,13 +782,10 @@ func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID 
 				Lang:      item.GetLang(),
 				LangName:  apistructs.LangTypes[apistructs.Lang(item.GetLang())],
 				Text:      item.GetText(),
-			}).Error; err != nil {
+			}); tx.Error != nil {
 				l.WithError(err).WithField("lang", item.GetLang()).Errorln("failed to Create readme")
 				return nil, apierr.PutOnExtension.InternalError(err)
 			}
-		default:
-			l.WithError(err2).WithFields(where).Errorln("failed to First readme")
-			return nil, apierr.PutOnExtension.InternalError(err2)
 		}
 	}
 
@@ -838,8 +796,7 @@ func (p *provider) updateExtension(ctx context.Context, l *logrus.Entry, userID 
 	if req.GetIsDefault() {
 		updates["default_version_id"] = version.ID
 	}
-	if err = tx.Model(opus).Where(map[string]interface{}{"id": opus.ID}).
-		Updates(updates).Error; err != nil {
+	if tx.Updates(opus, updates, dao.ByIDOption(opus.ID)); tx.Error != nil {
 		l.WithError(err).Errorln("failed to Updates opus")
 		return nil, apierr.PutOnExtension.InternalError(err)
 	}

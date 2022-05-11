@@ -19,24 +19,45 @@ import (
 	"gorm.io/gorm"
 )
 
+var tx *TX
+
 var InvalidTransactionError = errors.New("invalid transaction, it is already committed or roll backed")
 
 type TX struct {
 	Error error
 
 	tx    *gorm.DB
+	inTx  bool
 	valid bool
 }
 
-func Begin(db *gorm.DB) *TX {
+func SetSingleton(db *gorm.DB) {
+	if tx == nil {
+		tx = &TX{
+			Error: nil,
+			tx:    nil,
+			valid: true,
+		}
+	}
+}
+
+func Q() *TX {
+	if tx == nil {
+		panic("tx is not init")
+	}
+	return tx
+}
+
+func Begin() *TX {
 	return &TX{
-		tx:    db.Begin(),
+		tx:    Q().DB().Begin(),
 		valid: true,
+		inTx:  true,
 	}
 }
 
 func (tx *TX) Create(i interface{}) error {
-	if !tx.valid {
+	if tx.inTx && !tx.valid {
 		return InvalidTransactionError
 	}
 	tx.Error = tx.tx.Create(i).Error
@@ -44,7 +65,7 @@ func (tx *TX) Create(i interface{}) error {
 }
 
 func (tx *TX) CreateInBatches(i interface{}, size int) error {
-	if !tx.valid {
+	if tx.inTx && !tx.valid {
 		return InvalidTransactionError
 	}
 	tx.Error = tx.tx.CreateInBatches(i, size).Error
@@ -85,8 +106,61 @@ func (tx *TX) Updates(i, v interface{}, options ...Option) error {
 	return tx.Error
 }
 
+func (tx *TX) List(i interface{}, options ...Option) (int64, error) {
+	var total int64
+	options = append(options, listOption(i, &total))
+	db := options[0](tx.tx)
+	if db.Error != nil {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		tx.Error = db.Error
+		return 0, tx.Error
+	}
+	if len(options) == 1 {
+		return total, nil
+	}
+	for _, opt := range options[1:] {
+		db = opt(db)
+		if db.Error != nil {
+			if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+				return 0, nil
+			}
+			tx.Error = db.Error
+			return 0, tx.Error
+		}
+	}
+	return total, nil
+}
+
+func (tx *TX) Get(i interface{}, options ...Option) (bool, error) {
+	options = append(options, firstOption(i))
+	db := options[0](tx.tx)
+	if db.Error != nil {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		tx.Error = db.Error
+		return false, tx.Error
+	}
+	if len(options) == 1 {
+		return true, nil
+	}
+	for _, opt := range options[1:] {
+		db = opt(db)
+		if db.Error != nil {
+			if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+				return false, nil
+			}
+			tx.Error = db.Error
+			return false, tx.Error
+		}
+	}
+	return true, nil
+}
+
 func (tx *TX) CommitOrRollback() {
-	if !tx.valid {
+	if tx.inTx && !tx.valid {
 		return
 	}
 	if tx.Error == nil {
@@ -110,5 +184,17 @@ func deleteOption(i interface{}) Option {
 func updatesOption(i, v interface{}) Option {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Model(i).Updates(v)
+	}
+}
+
+func listOption(i interface{}, total *int64) Option {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Find(i).Count(total)
+	}
+}
+
+func firstOption(i interface{}) Option {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.First(i)
 	}
 }
