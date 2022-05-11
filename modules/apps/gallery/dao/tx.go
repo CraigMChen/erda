@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var tx *TX
+var q *TX
 
 var InvalidTransactionError = errors.New("invalid transaction, it is already committed or roll backed")
 
@@ -32,20 +32,19 @@ type TX struct {
 }
 
 func SetSingleton(db *gorm.DB) {
-	if tx == nil {
-		tx = &TX{
-			Error: nil,
-			tx:    nil,
+	if q == nil {
+		q = &TX{
+			tx:    db,
 			valid: true,
 		}
 	}
 }
 
 func Q() *TX {
-	if tx == nil {
-		panic("tx is not init")
+	if q == nil {
+		panic("q is not init")
 	}
-	return tx
+	return q
 }
 
 func Begin() *TX {
