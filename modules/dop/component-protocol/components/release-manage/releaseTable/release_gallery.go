@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/erda-project/erda-infra/pkg/transport"
 	gallerypb "github.com/erda-project/erda-proto-go/apps/gallery/pb"
 	"github.com/erda-project/erda-proto-go/core/dicehub/release/pb"
 	"github.com/erda-project/erda/apistructs"
@@ -41,10 +42,7 @@ func (r *ComponentReleaseTable) putOnRelease(ctx context.Context, releaseID stri
 		return err
 	}
 
-	ctx = metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{
-		httputil.InternalHeader: "dop",
-	}))
-
+	ctx = transport.WithHeader(ctx, metadata.New(map[string]string{httputil.InternalHeader: "dop"}))
 	getReleaseResp, err := r.svc.GetRelease(ctx, &pb.ReleaseGetRequest{ReleaseID: releaseID})
 	if err != nil {
 		return err
@@ -83,10 +81,7 @@ func (r *ComponentReleaseTable) putOnRelease(ctx context.Context, releaseID stri
 func (r *ComponentReleaseTable) putOffRelease(ctx context.Context, releaseID string) error {
 	userID := r.sdk.Identity.UserID
 
-	ctx = metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{
-		httputil.InternalHeader: "dop",
-	}))
-
+	ctx = transport.WithHeader(ctx, metadata.New(map[string]string{httputil.InternalHeader: "dop"}))
 	getReleaseResp, err := r.svc.GetRelease(ctx, &pb.ReleaseGetRequest{ReleaseID: releaseID})
 	if err != nil {
 		return err
