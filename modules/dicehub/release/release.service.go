@@ -400,6 +400,7 @@ func (s *ReleaseService) GetIosPlist(ctx context.Context, req *pb.GetIosPlistReq
 func (s *ReleaseService) GetRelease(ctx context.Context, req *pb.ReleaseGetRequest) (*pb.ReleaseGetResponse, error) {
 	orgID, err := getPermissionHeader(ctx)
 	if err != nil {
+		logrus.Errorf("failed to get orgID: %s", orgID)
 		return nil, apierrors.ErrGetRelease.NotLogin()
 	}
 
@@ -411,6 +412,7 @@ func (s *ReleaseService) GetRelease(ctx context.Context, req *pb.ReleaseGetReque
 
 	identityInfo, err := getIdentityInfo(ctx)
 	if err != nil {
+		logrus.Errorf("failed to get identityInfo, %v", err)
 		return nil, apierrors.ErrGetRelease.NotLogin()
 	}
 	if !identityInfo.IsInternalClient() {
