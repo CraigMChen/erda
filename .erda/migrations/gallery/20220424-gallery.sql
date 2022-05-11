@@ -19,7 +19,7 @@ CREATE TABLE `erda_gallery_opus`
     `default_version_id` VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
     `latest_version_id`  VARCHAR(36)  NOT NULL DEFAULT '' COMMENT 'erda_gallery_opus_version.id',
 
-    UNIQUE KEY uk_org_name_type (`org_id`, `name`, `type`)
+    UNIQUE KEY uk_org_name_type (`org_id`, `type`, `name`, `deleted_at`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 表';
 
 
@@ -45,7 +45,7 @@ CREATE TABLE `erda_gallery_opus_version`
     `is_valid`        BOOLEAN      NOT NULL DEFAULT TRUE COMMENT '有效性标识',
 
     INDEX             idx_opus_id (`opus_id`),
-    UNIQUE KEY uk_opus_id_version (`opus_id`, `version`)
+    UNIQUE KEY uk_opus_id_version (`opus_id`, `version`, `deleted_at`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 版本';
 
 
@@ -108,7 +108,7 @@ CREATE TABLE `erda_gallery_opus_readme`
 
     INDEX        idx_opus_id (`opus_id`),
     INDEX        idx_version_id (`version_id`),
-    UNIQUE KEY uk_version_lang (`version_id`, `lang`)
+    UNIQUE KEY uk_version_lang (`version_id`, `lang`, `deleted_at`)
 ) DEFAULT CHARACTER SET UTF8MB4 COMMENT 'opus 的 readme 信息';
 
 

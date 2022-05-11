@@ -632,6 +632,7 @@ func (s *ReleaseService) ListRelease(ctx context.Context, req *pb.ReleaseListReq
 			}
 			req.ReleaseID = strings.Join(releaseIDs, ",")
 		}
+		req.ProjectID = 0
 	}
 	resp, err := s.List(ctx, orgID, params)
 	if err != nil {

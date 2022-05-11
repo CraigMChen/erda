@@ -33,6 +33,7 @@ import (
 	"github.com/erda-project/erda/apistructs"
 	"github.com/erda-project/erda/modules/apps/cache"
 	"github.com/erda-project/erda/modules/apps/gallery/apierr"
+	"github.com/erda-project/erda/modules/apps/gallery/dao"
 	"github.com/erda-project/erda/modules/apps/gallery/model"
 	"github.com/erda-project/erda/pkg/common/apis"
 )
@@ -111,29 +112,26 @@ func (p *provider) ListOpus(ctx context.Context, req *pb.ListOpusReq) (*pb.ListO
 	if req.GetPageSize() >= 10 && req.GetPageSize() <= 1000 {
 		pageSize = int(req.GetPageSize())
 	}
-	where := p.D.Where("org_id = ? OR level = ?", orgID, apistructs.OpusLevelSystem)
+
+	// query opuses by options
+	var options []dao.Option
 	if req.GetType() != "" {
-		where = where.Where("type = ?", req.GetType())
+		options = append(options, dao.WhereOption("type = ?", req.GetType()))
 	}
 	if req.GetName() != "" {
-		where = where.Where("name = ?", req.GetName())
+		options = append(options, dao.WhereOption("name = ?", req.GetName()))
 	}
-
-	// 查出满足 where 条件的 opuses
-	var (
-		opuses    []*model.Opus
-		opusesIDs []string
-	)
-	if err := where.
-		Find(&opuses).
-		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	options = append(options, dao.WhereOption("org_id = ? OR level = ?", orgID, apistructs.OpusLevelSystem))
+	total, opuses, err := dao.ListOpuses(p.D, options...)
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find opuses")
 		return nil, apierr.ListOpus.InternalError(err)
 	}
-	if len(opuses) == 0 {
+	if total == 0 {
 		l.Warnln("not found")
 		return new(pb.ListOpusResp), nil
 	}
+	var opusesIDs []string
 	for _, opus := range opuses {
 		opusesIDs = append(opusesIDs, opus.ID.String)
 	}
@@ -158,46 +156,44 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 
 	// todo: 鉴权
 
-	var (
-		opus          model.Opus
-		versions      []*model.OpusVersion
-		presentations []*model.OpusPresentation
-		readmes       []*model.OpusReadme
-		installations []*model.OpusInstallation
-	)
-	if err := p.D.Where("id = ?", req.GetOpusID()).First(&opus).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierr.ListOpusVersions.NotFound()
-		}
-		l.WithError(err).Errorln("failed to First opus")
+	// query opus
+	opus, ok, err := dao.GetOpusByID(p.D, req.GetOpusID())
+	if err != nil {
+		l.WithError(err).Errorln("failed to GetOpusByID")
 		return nil, apierr.ListOpusVersions.InternalError(err)
 	}
-	if err := p.D.Where("opus_id = ?", req.GetOpusID()).Find(&versions).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			l.WithError(err).Errorln("opus's version not found")
-			return nil, apierr.ListOpusVersions.NotFound()
-		}
+	if !ok {
+		return nil, apierr.ListOpusVersions.NotFound()
+	}
+
+	// query versions
+	total, versions, err := dao.ListVersions(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find versions")
 		return nil, apierr.ListOpusVersions.InternalError(err)
 	}
-	if err := p.D.Where("opus_id = ?", req.GetOpusID()).Find(&presentations).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if total == 0 {
+		l.WithError(err).Errorln("opus's version not found")
+		return nil, apierr.ListOpusVersions.NotFound()
+	}
+
+	// query presentations
+	_, presentations, err := dao.ListPresentations(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find presentations")
 		return nil, apierr.ListOpusVersions.InternalError(err)
 	}
-	if err := p.D.Where("opus_id = ?", req.GetOpusID()).Find(&readmes).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+
+	// query readmes
+	_, readmes, err := dao.ListReadmes(p.D, dao.WhereOption("opus_id = ?", req.GetOpusID()))
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find readmes")
-		return nil, apierr.ListOpusVersions.InternalError(err)
-	}
-	// todo: not used
-	if err := p.D.Where("opus_id = ?", req.GetOpusID()).Find(&installations).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		l.WithError(err).Errorln("failed to Find installation")
 		return nil, apierr.ListOpusVersions.InternalError(err)
 	}
 
 	var (
 		presentationMap = make(map[string]*model.OpusPresentation)
 		readmesMap      = make(map[string]map[string]*model.OpusReadme)
-		installationMap = make(map[string]*model.OpusInstallation)
 	)
 	for _, item := range presentations {
 		presentationMap[item.VersionID] = item
@@ -209,9 +205,6 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 		}
 		m[item.Lang] = item
 		readmesMap[item.VersionID] = m
-	}
-	for _, item := range installations {
-		installationMap[item.VersionID] = item
 	}
 
 	var resp = pb.ListOpusVersionsResp{Data: &pb.ListOpusVersionsRespData{
@@ -311,44 +304,28 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 	// todo: 鉴权
 
 	// Check if artifacts already exist
-	var (
-		opus     model.Opus
-		versions []*model.OpusVersion
-		common   = model.Common{
-			OrgID:     uint32(orgID),
-			OrgName:   orgDto.Name,
-			CreatorID: userID,
-			UpdaterID: userID,
-		}
-	)
-	tx := p.D.Begin()
-	defer func() {
-		if err == nil {
-			tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
-	switch err = p.D.Where(map[string]interface{}{
+	var common = model.Common{
+		OrgID:     uint32(orgID),
+		OrgName:   orgDto.Name,
+		CreatorID: userID,
+		UpdaterID: userID,
+	}
+
+	tx := dao.Begin(p.D, true)
+	defer tx.CommitOrRollback()
+
+	// get the opus by options, if the opus does not exist, create it
+	opus, ok, err := dao.GetOpus(p.D, dao.MapOption(map[string]interface{}{
 		"org_id": orgID,
 		"type":   apistructs.OpusTypeArtifactsProject,
 		"name":   req.GetName(),
-	}).First(&opus).Error; {
-	case err == nil:
-		err = p.D.Where(map[string]interface{}{
-			"opus_id": opus.ID,
-			"version": req.GetVersion(),
-		}).Find(&versions).Error
-		if err == nil {
-			l.Warnln("already exists")
-			return nil, apierr.PutOnArtifacts.AlreadyExists()
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			l.WithError(err).Errorln("failed to Find versions")
-			return nil, apierr.PutOnArtifacts.InternalError(err)
-		}
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		opus = model.Opus{
+	}))
+	if err != nil {
+		l.WithError(err).Errorln("failed to Find versions")
+		return nil, apierr.PutOnArtifacts.InternalError(err)
+	}
+	if !ok {
+		opus = &model.Opus{
 			Common:      common,
 			Level:       string(apistructs.OpusLevelOrg),
 			Type:        string(apistructs.OpusTypeArtifactsProject),
@@ -356,22 +333,30 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 			DisplayName: req.GetDisplayName(),
 			Catalog:     req.GetCatalog(),
 		}
-		if err = tx.Create(&opus).Error; err != nil {
+		if err := tx.Create(opus).Error(); err != nil {
 			l.WithError(err).Errorln("failed to Create opus")
 			return nil, apierr.PutOnArtifacts.InternalError(err)
 		}
-	default:
-		l.WithError(err).Errorln("failed to First opus")
-		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
 
-	// create version
+	// get the version by options, if the version exist, return 'already exists' or else create it
+	_, ok, err = dao.GetOpusVersion(p.D, dao.MapOption(map[string]interface{}{
+		"opus_id": opus.ID,
+		"version": req.GetVersion(),
+	}))
+	if err != nil {
+		l.WithError(err).Errorln("failed to Find versions")
+		return nil, apierr.PutOnArtifacts.InternalError(err)
+	}
+	if ok {
+		l.Warnln("already exists")
+		return nil, apierr.PutOnArtifacts.AlreadyExists()
+	}
 	labels, err := json.Marshal(req.GetLabels())
 	if err != nil {
 		l.WithError(err).Warnf("failed to json.Marshal labels, labels: %v", req.GetLabels())
 	}
 	var version = model.OpusVersion{
-		Model:   model.Model{},
 		Common:  common,
 		OpusID:  opus.ID.String,
 		Version: req.GetVersion(),
@@ -380,14 +365,13 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		LogoURL: req.GetLogoURL(),
 		IsValid: true,
 	}
-	if err := tx.Create(&version).Error; err != nil {
+	if err := tx.Create(&version).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Create version")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
 
 	// create presentation
 	var presentation = model.OpusPresentation{
-		Model:           model.Model{},
 		Common:          common,
 		OpusID:          opus.ID.String,
 		VersionID:       version.ID.String,
@@ -405,7 +389,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		IsDownloadable:  req.GetIsDownloadable(),
 		DownloadURL:     req.GetDownloadURL(),
 	}
-	if err := tx.Create(&presentation).Error; err != nil {
+	if err := tx.Create(&presentation).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Create presentation")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -424,7 +408,7 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		}
 		readmes = append(readmes, readme)
 	}
-	if err = tx.CreateInBatches(readmes, len(readmes)).Error; err != nil {
+	if err = tx.CreateInBatches(readmes, len(readmes)).Error(); err != nil {
 		l.WithError(err).Errorln("failed to CreateInBatches readmes")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -442,18 +426,17 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		Installer: string(apistructs.OpusTypeArtifactsProject),
 		Spec:      string(spec),
 	}
-	if err = tx.Create(&installation).Error; err != nil {
+	if err = tx.Create(&installation).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Create installation")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
 
 	// update opus
-	if err = tx.Model(&opus).Where(map[string]interface{}{"id": opus.ID}).
-		Updates(map[string]interface{}{
-			"updater_id":         userID,
-			"default_version_id": version.ID,
-			"latest_version_id":  version.ID,
-		}).Error; err != nil {
+	if err = tx.Updates(&opus, map[string]interface{}{
+		"updater_id":         userID,
+		"default_version_id": version.ID,
+		"latest_version_id":  version.ID,
+	}, dao.ByIDOption(opus.ID)).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Updates opus")
 		return nil, apierr.PutOnArtifacts.InternalError(err)
 	}
@@ -478,51 +461,46 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 	// todo: 鉴权
 
 	// query version
-	var version model.OpusVersion
-	if err := p.D.Where(map[string]interface{}{
-		"id": req.GetVersionID(),
-	}).First(&version).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			l.WithError(err).Warnln("delete version not found")
-			return new(commonPb.VoidResponse), nil
-		}
+	version, ok, err := dao.GetOpusVersion(p.D, dao.ByIDOption(req.GetVersionID()))
+	if err != nil {
 		l.WithError(err).Errorln("failed to First version")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-
+	if !ok {
+		l.WithError(err).Warnln("delete version not found")
+		return new(commonPb.VoidResponse), nil
+	}
 	if req.GetOpusID() != version.OpusID {
 		return nil, apierr.PutOffArtifacts.InvalidParameter("invalid opusID and versionID")
 	}
 
-	tx := p.D.Begin()
-	var err error
-	defer func() {
-		if err == nil {
-			tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
+	tx := dao.Begin(p.D, true)
+	defer tx.CommitOrRollback()
 
-	if err = tx.Delete(model.OpusVersion{}, map[string]interface{}{"id": req.GetVersionID()}).Error; err != nil {
+	if err = tx.Delete(new(model.OpusVersion), dao.ByIDOption(req.GetVersionID())).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete version")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(model.OpusPresentation{}, map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	if err = tx.Delete(new(model.OpusPresentation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete presentation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(model.OpusReadme{}, map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	if err = tx.Delete(new(model.OpusReadme), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete readme")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err = tx.Delete(model.OpusInstallation{}, map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	if err = tx.Delete(new(model.OpusInstallation), dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})).Error(); err != nil {
 		l.WithError(err).Errorln("failed to Delete installation")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if err2 := p.D.Where(map[string]interface{}{"opus_id": req.GetOpusID()}).Find(new([]*model.OpusVersion)).Error; err2 != nil && errors.Is(err2, gorm.ErrRecordNotFound) {
-		if err = tx.Delete(model.Opus{}).Where(map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
-			l.WithError(err).Errorln("failed to Delete opuses")
+	total, _, err := dao.ListVersions(p.D, dao.MapOption(map[string]interface{}{"opus_id": req.GetOpusID()}))
+	if err != nil {
+		l.WithError(err).Errorln("failed to ListVersions")
+		return nil, apierr.PutOffArtifacts.InternalError(err)
+	}
+	if total == 0 {
+		if err = tx.Delete(new(model.Opus), dao.ByIDOption(req.GetOpusID())).Error(); err != nil {
+			l.WithError(err).Errorln("failed to Delete opus")
 			return nil, apierr.PutOffArtifacts.InternalError(err)
 		}
 	}
@@ -613,24 +591,22 @@ func (p *provider) PutOnExtensions(ctx context.Context, req *pb.PubOnExtensionsR
 }
 
 func (p *provider) listOpusByIDs(_ context.Context, pageSize, pageNo int, opusesIDs []string) (*pb.ListOpusResp, error) {
-	var (
-		l        = p.l.WithField("func", "listOpusByIDs")
-		opuses   []*model.Opus
-		versions []*model.OpusVersion
-		total    int64
-	)
+	var l = p.l.WithField("func", "listOpusByIDs")
 
-	if err := p.D.Limit(pageSize).Offset((pageNo-1)*pageSize).
-		Where("id IN (?)", opusesIDs).
-		Find(&opuses).
-		Count(&total).
-		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	total, opuses, err := dao.ListOpuses(p.D,
+		dao.PageOption(pageSize, pageNo),
+		dao.WhereOption("id IN (?)", opusesIDs),
+	)
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find opuses")
 		return nil, apierr.ListOpus.InternalError(err)
 	}
-	if err := p.D.Where("opus_id IN (?)", opusesIDs).
-		Find(&versions).
-		Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if total == 0 {
+		return new(pb.ListOpusResp), nil
+	}
+
+	_, versions, err := dao.ListVersions(p.D, dao.WhereOption("opus_id IN (?)", opusesIDs))
+	if err != nil {
 		l.WithError(err).Errorln("failed to Find versions")
 		return nil, apierr.ListOpus.InternalError(err)
 	}
