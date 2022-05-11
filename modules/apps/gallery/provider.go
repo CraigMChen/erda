@@ -470,9 +470,10 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 	// todo: 鉴权
 
 	// query version
-	version, ok, err := dao.GetOpusVersion(p.D, dao.ByIDOption(req.GetVersionID()))
+	var byIDOption = dao.ByIDOption(req.GetVersionID())
+	version, ok, err := dao.GetOpusVersion(p.D, byIDOption)
 	if err != nil {
-		l.WithError(err).Errorln("failed to First version")
+		l.WithError(err).Errorln("failed to GetOpusVersion")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
 	if !ok {
@@ -483,42 +484,69 @@ func (p *provider) PutOffArtifacts(ctx context.Context, req *pb.PutOffArtifactsR
 		return nil, apierr.PutOffArtifacts.InvalidParameter("invalid opusID and versionID")
 	}
 
-	tx := p.D.Begin()
-	defer func() {
-		if err == nil {
-			tx.Commit()
-		} else {
-			tx.Rollback()
-		}
-	}()
+	tx := dao.Begin(p.D)
+	defer tx.CommitOrRollback()
+	//tx := p.D.Begin()
+	//defer func() {
+	//	if err == nil {
+	//		l.Infoln("tx.Commit")
+	//		tx.Commit()
+	//	} else {
+	//		l.Infoln("tx.Rollback")
+	//		tx.Rollback()
+	//	}
+	//}()
 
-	if err = tx.Delete(new(model.OpusVersion), map[string]interface{}{"id": req.GetVersionID()}).Error; err != nil {
-		l.WithError(err).Errorln("failed to Delete version")
-		return nil, apierr.PutOffArtifacts.InternalError(err)
-	}
-	if err = tx.Delete(new(model.OpusPresentation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-		l.WithError(err).Errorln("failed to Delete presentation")
-		return nil, apierr.PutOffArtifacts.InternalError(err)
-	}
-	if err = tx.Delete(new(model.OpusReadme), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-		l.WithError(err).Errorln("failed to Delete readme")
-		return nil, apierr.PutOffArtifacts.InternalError(err)
-	}
-	if err = tx.Delete(new(model.OpusInstallation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
-		l.WithError(err).Errorln("failed to Delete installation")
-		return nil, apierr.PutOffArtifacts.InternalError(err)
-	}
 	total, _, err := dao.ListVersions(p.D, dao.MapOption(map[string]interface{}{"opus_id": req.GetOpusID()}))
 	if err != nil {
 		l.WithError(err).Errorln("failed to ListVersions")
 		return nil, apierr.PutOffArtifacts.InternalError(err)
 	}
-	if total == 0 {
-		if err = tx.Delete(new(model.Opus), map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
-			l.WithError(err).Errorln("failed to Delete opus")
-			return nil, apierr.PutOffArtifacts.InternalError(err)
+	if tx.Delete(new(model.OpusVersion), byIDOption); tx.Error != nil {
+		l.WithError(tx.Error).Errorln("failed to Delete version")
+		return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
+	}
+	var versionIDOption = dao.MapOption(map[string]interface{}{"version_id": req.GetVersionID()})
+	if tx.Delete(new(model.OpusPresentation), versionIDOption); tx.Error != nil {
+		l.WithError(tx.Error).Errorln("failed to Delete presentation")
+		return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
+	}
+	if tx.Delete(new(model.OpusReadme), versionIDOption); tx.Error != nil {
+		l.WithError(tx.Error).Errorln("failed to Delete readme")
+		return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
+	}
+	if tx.Delete(new(model.OpusInstallation), versionIDOption); tx.Error != nil {
+		l.WithError(tx.Error).Errorln("failed to Delete installation")
+		return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
+	}
+	if total == 1 {
+		if tx.Delete(new(model.Opus), dao.ByIDOption(req.GetOpusID())); tx.Error != nil {
+			l.WithError(tx.Error).Errorln("failed to Delete opus")
+			return nil, apierr.PutOffArtifacts.InternalError(tx.Error)
 		}
 	}
+	//if err = tx.Delete(new(model.OpusVersion), map[string]interface{}{"id": req.GetVersionID()}).Error; err != nil {
+	//	l.WithError(err).Errorln("failed to Delete version")
+	//	return nil, apierr.PutOffArtifacts.InternalError(err)
+	//}
+	//if err = tx.Delete(new(model.OpusPresentation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	//	l.WithError(err).Errorln("failed to Delete presentation")
+	//	return nil, apierr.PutOffArtifacts.InternalError(err)
+	//}
+	//if err = tx.Delete(new(model.OpusReadme), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	//	l.WithError(err).Errorln("failed to Delete readme")
+	//	return nil, apierr.PutOffArtifacts.InternalError(err)
+	//}
+	//if err = tx.Delete(new(model.OpusInstallation), map[string]interface{}{"version_id": req.GetVersionID()}).Error; err != nil {
+	//	l.WithError(err).Errorln("failed to Delete installation")
+	//	return nil, apierr.PutOffArtifacts.InternalError(err)
+	//}
+	//if total == 1 {
+	//	if err = tx.Delete(new(model.Opus), map[string]interface{}{"id": req.GetOpusID()}).Error; err != nil {
+	//		l.WithError(err).Errorln("failed to Delete opus")
+	//		return nil, apierr.PutOffArtifacts.InternalError(err)
+	//	}
+	//}
 
 	return new(commonPb.VoidResponse), nil
 }
