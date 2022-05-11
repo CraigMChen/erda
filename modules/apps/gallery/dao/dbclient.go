@@ -60,7 +60,8 @@ func (tx *Tx) Updates(i interface{}, values interface{}, options ...Option) *Tx 
 	for _, opt := range options {
 		tx.DB = opt(tx.DB)
 	}
-	tx.err = tx.DB.Model(i).Updates(values).Error
+	tx.DB = tx.DB.Model(i).Updates(values)
+	tx.err = tx.DB.Error
 	if tx.err != nil && tx.autoRollback {
 		tx.rollback()
 	}
