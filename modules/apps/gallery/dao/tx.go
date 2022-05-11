@@ -31,7 +31,7 @@ type TX struct {
 	valid bool
 }
 
-func SetSingleton(db *gorm.DB) {
+func Init(db *gorm.DB) {
 	if q == nil {
 		q = &TX{
 			tx:    db,
@@ -41,7 +41,7 @@ func SetSingleton(db *gorm.DB) {
 }
 
 func Q() *TX {
-	if q == nil {
+	if q == nil || q.tx == nil {
 		panic("q is not init")
 	}
 	return q

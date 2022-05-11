@@ -15,42 +15,8 @@
 package dao
 
 import (
-	"gorm.io/gorm"
-
 	"github.com/erda-project/erda/modules/apps/gallery/model"
 )
-
-type Option func(db *gorm.DB) *gorm.DB
-
-func WhereOption(format string, args ...interface{}) Option {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where(format, args...)
-	}
-}
-
-func MapOption(m map[string]interface{}) Option {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where(m)
-	}
-}
-
-func ByIDOption(id interface{}) Option {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("id = ?", id)
-	}
-}
-
-func PageOption(pageSize, pageNo int) Option {
-	if pageSize < 0 {
-		pageSize = 0
-	}
-	if pageNo < 1 {
-		pageNo = 1
-	}
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Limit(pageSize).Offset((pageNo - 1) * pageSize)
-	}
-}
 
 func ListOpuses(tx *TX, options ...Option) (int64, []*model.Opus, error) {
 	var l []*model.Opus
