@@ -74,7 +74,8 @@ func (tx *Tx) Delete(i interface{}, options ...Option) *Tx {
 	for _, opt := range options {
 		tx.DB = opt(tx.DB)
 	}
-	tx.err = tx.DB.Delete(i).Error
+	tx.DB = tx.DB.Delete(i)
+	tx.err = tx.DB.Error
 	if tx.err != nil && tx.autoRollback {
 		tx.rollback()
 	}
