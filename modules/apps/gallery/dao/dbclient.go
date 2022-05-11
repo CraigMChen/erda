@@ -35,7 +35,8 @@ func (tx *Tx) Create(i interface{}) *Tx {
 	if tx.err != nil {
 		return tx
 	}
-	tx.err = tx.DB.Create(i).Error
+	tx.DB = tx.DB.Create(i)
+	tx.err = tx.DB.Error
 	if tx.err != nil && tx.autoRollback {
 		tx.rollback()
 	}
