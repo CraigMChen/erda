@@ -83,8 +83,8 @@ type OpusPresentation struct {
 	ContactEmail    string `gorm:"contact_email"`
 	IsOpenSourced   bool   `gorm:"is_open_sourced"`
 	OpensourceURL   string `gorm:"opensource_url"`
-	LicenceName     string `gorm:"licence_name"`
-	LicenceURL      string `gorm:"licence_url"`
+	LicenseName     string `gorm:"license_name"`
+	LicenseURL      string `gorm:"license_url"`
 	HomepageName    string `gorm:"homepage_name"`
 	HomepageURL     string `gorm:"homepage_url"`
 	HomepageLogoURL string `gorm:"homepage_logo_url"`
