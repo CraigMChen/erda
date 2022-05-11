@@ -247,8 +247,8 @@ func (p *provider) ListOpusVersions(ctx context.Context, req *pb.ListOpusVersion
 			item.ContactEmail = pre.ContactEmail
 			item.IsOpenSourced = pre.IsOpenSourced
 			item.OpensourceURL = pre.OpensourceURL
-			item.LicenceName = pre.LicenceName
-			item.LicenceURL = pre.LicenceURL
+			item.LicenceName = pre.LicenseName
+			item.LicenceURL = pre.LicenseURL
 			item.HomepageName = pre.HomepageName
 			item.HomepageURL = pre.HomepageURL
 			item.HomepageLogoURL = pre.HomepageLogoURL
@@ -381,8 +381,8 @@ func (p *provider) PutOnArtifacts(ctx context.Context, req *pb.PutOnArtifactsReq
 		ContactEmail:    req.GetContactEmail(),
 		IsOpenSourced:   req.GetIsOpenSourced(),
 		OpensourceURL:   req.GetOpensourceURL(),
-		LicenceName:     req.GetLicenseName(),
-		LicenceURL:      req.GetLicenseURL(),
+		LicenseName:     req.GetLicenseName(),
+		LicenseURL:      req.GetLicenseURL(),
 		HomepageName:    req.GetHomepageName(),
 		HomepageURL:     req.GetHomepageURL(),
 		HomepageLogoURL: req.GetHomepageLogoURL(),
@@ -867,8 +867,8 @@ func (p *provider) createExtensions(ctx context.Context, l *logrus.Entry, userID
 		ContactEmail:    req.GetContactEmail(),
 		IsOpenSourced:   req.GetIsOpenSourced(),
 		OpensourceURL:   req.GetOpensourceURL(),
-		LicenceName:     req.GetLicenseName(),
-		LicenceURL:      req.GetLicenseURL(),
+		LicenseName:     req.GetLicenseName(),
+		LicenseURL:      req.GetLicenseURL(),
 		HomepageName:    req.GetHomepageName(),
 		HomepageURL:     req.GetHomepageURL(),
 		HomepageLogoURL: req.GetHomepageLogoURL(),
