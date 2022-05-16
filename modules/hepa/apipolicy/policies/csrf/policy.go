@@ -209,12 +209,6 @@ func (policy Policy) ParseConfig(dto apipolicy.PolicyDto, ctx map[string]interfa
 		return res, nil
 	}
 
-	for routeID, routeInf := range routes {
-		routeReq := *req
-		routeReq.RouteId = routeID
-		_, routeInf.Found = adapter.GetPlugin(&routeReq)
-		l.WithError(err).Infof("route info: %+v", routeInf)
-	}
 	for routeID := range routes {
 		routeReq := *req
 		routeReq.RouteId = routeID
