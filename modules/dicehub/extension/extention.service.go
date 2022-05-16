@@ -33,7 +33,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/erda-project/erda-infra/base/version"
-	pb "github.com/erda-project/erda-proto-go/core/dicehub/extension/pb"
+	"github.com/erda-project/erda-proto-go/core/dicehub/extension/pb"
 	"github.com/erda-project/erda/apistructs"
 	"github.com/erda-project/erda/bundle"
 	"github.com/erda-project/erda/modules/dicehub/extension/db"
@@ -485,36 +485,8 @@ func (s *extensionService) CreateExtensionVersionByRequest(req *pb.ExtensionVers
 	}
 
 	version, err := s.db.GetExtensionVersion(req.Name, req.Version)
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			version = &db.ExtensionVersion{
-				ExtensionId: ext.Id,
-				Name:        specData.Name,
-				Version:     specData.Version,
-				Dice:        req.DiceYml,
-				Spec:        req.SpecYml,
-				Swagger:     req.SwaggerYml,
-				Readme:      req.Readme,
-				Public:      req.Public,
-				IsDefault:   req.IsDefault,
-			}
-			err = s.db.CreateExtensionVersion(version)
-			s.triggerPushEvent(specData, "create")
-			if err != nil {
-				return nil, apierrors.ErrQueryExtension.InternalError(err)
-			}
-
-			data, err := version.ToApiData(ext.Type, false)
-			if err != nil {
-				return nil, apierrors.ErrQueryExtension.InternalError(err)
-			}
-			return &pb.ExtensionVersionCreateResponse{Data: data}, nil
-		} else {
-			return nil, apierrors.ErrQueryExtension.InternalError(err)
-		}
-	}
-	if req.ForceUpdate {
+	switch {
+	case err == nil && req.GetForceUpdate():
 		version.Spec = req.SpecYml
 		version.Dice = req.DiceYml
 		version.Swagger = req.SwaggerYml
@@ -549,8 +521,33 @@ func (s *extensionService) CreateExtensionVersionByRequest(req *pb.ExtensionVers
 			return nil, apierrors.ErrQueryExtension.InternalError(err)
 		}
 		return &pb.ExtensionVersionCreateResponse{Data: data}, nil
-	} else {
+	case err == nil:
 		return nil, apierrors.ErrQueryExtension.InternalError(errors.New("version already exist"))
+	case err == gorm.ErrRecordNotFound:
+		version = &db.ExtensionVersion{
+			ExtensionId: ext.Id,
+			Name:        specData.Name,
+			Version:     specData.Version,
+			Dice:        req.DiceYml,
+			Spec:        req.SpecYml,
+			Swagger:     req.SwaggerYml,
+			Readme:      req.Readme,
+			Public:      req.Public,
+			IsDefault:   req.IsDefault,
+		}
+		err = s.db.CreateExtensionVersion(version)
+		s.triggerPushEvent(specData, "create")
+		if err != nil {
+			return nil, apierrors.ErrQueryExtension.InternalError(err)
+		}
+
+		data, err := version.ToApiData(ext.Type, false)
+		if err != nil {
+			return nil, apierrors.ErrQueryExtension.InternalError(err)
+		}
+		return &pb.ExtensionVersionCreateResponse{Data: data}, nil
+	default:
+		return nil, apierrors.ErrQueryExtension.InternalError(err)
 	}
 }
 
