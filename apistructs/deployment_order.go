@@ -26,6 +26,7 @@ type DeploymentOrderCreateRequest struct {
 	Type            string `json:"type"` // application_release or project_release
 	ReleaseName     string `json:"releaseName"`
 	ProjectId       uint64 `json:"projectId"`
+	ProjectName     string `json:"projectName"`
 	ApplicationName string `json:"applicationName"`
 
 	Source              string `json:"source"` // default: DEPLOY_CENTER; value: PIPELINE
